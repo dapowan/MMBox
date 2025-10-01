@@ -45,5 +45,5 @@ pip install ms-swift
 # 赋权
 chmod +x mmb_sft.sh
 # 运行
-./run.sh
+./mmb_sft.sh
 ```
