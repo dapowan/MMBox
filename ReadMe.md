@@ -43,7 +43,7 @@ pip install ms-swift
 ## 4. Run the Project
 ```bash
 # 赋权
-chmod +x run.sh
+chmod +x mmb_sft.sh
 # 运行
 ./run.sh
 ```
