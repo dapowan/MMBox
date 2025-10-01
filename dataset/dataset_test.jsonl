@@ -1,0 +1,25 @@
+{"messages":[
+  {"role":"system","content":"You are a helpful assistant."},
+  {"role":"user","content":"帮我写一个简单的Python函数，计算两个数的和"},
+  {"role":"assistant","content":"可以的：\n```python\ndef add(a, b):\n    return a + b\n```"}
+]}
+{"messages":[
+  {"role":"system","content":"You are a helpful assistant."},
+  {"role":"user","content":"讲一个关于程序员的笑话"},
+  {"role":"assistant","content":"程序员的冷笑话就是——0度。"}
+]}
+{"messages":[
+  {"role":"system","content":"You are a helpful assistant."},
+  {"role":"user","content":"把句子 'I love machine learning' 翻译成中文"},
+  {"role":"assistant","content":"我喜欢机器学习。"}
+]}
+{"messages":[
+  {"role":"system","content":"You are a helpful assistant."},
+  {"role":"user","content":"地球和月球之间的平均距离是多少？"},
+  {"role":"assistant","content":"大约是 384,400 公里。"}
+]}
+{"messages":[
+  {"role":"system","content":"You are a helpful assistant."},
+  {"role":"user","content":"请给我一个健康饮食的小建议"},
+  {"role":"assistant","content":"每天多吃蔬菜和水果，少喝含糖饮料，保持充足的水分摄入。"}
+]}
