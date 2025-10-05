@@ -1,0 +1,86 @@
+name: Generate Concrete Queries from a Template
+version: "1.0"
+purpose: >
+  Ask an LLM to generate natural-language queries by filling in a given template's placeholders
+  with realistic example values based on tag descriptions and examples.
+
+placeholders:
+  - name: "<template>"
+    meaning: >
+      The query template containing placeholders (e.g., "On which <time> did I spend the most time at <place>?").
+  - name: "<tag_descriptions>"
+    meaning: >
+      A list of available tags and what they represent (e.g., <time>: Represents a time period).
+  - name: "<tag_examples>"
+    meaning: >
+      Example values for each tag (e.g., <time>: ["Monday", "yesterday"]; <place>: ["gym", "school"]).
+  - name: "<n_queries>"
+    meaning: >
+      How many filled-in queries should be generated.
+
+prompt_template: |
+  You are helping me generate concrete user queries from a template.
+
+  Template:
+  <template>
+
+  Available tags and their meanings:
+  <tag_descriptions>
+
+  Example values for each tag:
+  <tag_examples>
+
+  Please generate <n_queries> realistic queries by replacing placeholders with appropriate values.
+  - Vary the values across different generations (do not repeat too often).
+  - Keep the language natural and fluent, as if asked by a real person.
+  - Do not output the template again, only the generated queries.
+
+  Return the result as a JSON array of strings and nothing else.
+
+target_output:
+  type: json_array
+  schema: array<string>
+  constraints:
+    unique: true
+    min_items: 1
+  examples_expected_shape:
+    - "On which Monday did I spend the most time at home?"
+    - "On which Friday did I spend the most time at school?"
+    - "On which day last week did I spend the most time at the gym?"
+
+regex_extract_target_output:
+  pattern: "(?s)\\[\\s*(?:\\\"(?:\\\\.|[^\\\"\\\\])*\\\"\\s*(?:,\\s*\\\"(?:\\\\.|[^\\\"\\\\])*\\\"\\s*)*)?\\]"
+  flags: "DOTALL"
+  notes: >
+    Captures the first JSON array of generated queries from the model output.
+
+example_instantiation:
+  placeholders:
+    "<template>": "On which <time> did I spend the most time at <place>?"
+    "<tag_descriptions>": |
+      - <time>: Represents a time period or specific date/time.
+      - <place>: Represents a location.
+    "<tag_examples>": |
+      - <time>: ["Monday", "Tuesday", "yesterday", "last week"]
+      - <place>: ["home", "school", "gym", "office"]
+    "<n_queries>": "5"
+  rendered_prompt: |
+    You are helping me generate concrete user queries from a template.
+
+    Template:
+    On which <time> did I spend the most time at <place>?
+
+    Available tags and their meanings:
+    - <time>: Represents a time period or specific date/time.
+    - <place>: Represents a location.
+
+    Example values for each tag:
+    - <time>: ["Monday", "Tuesday", "yesterday", "last week"]
+    - <place>: ["home", "school", "gym", "office"]
+
+    Please generate 5 realistic queries by replacing placeholders with appropriate values.
+    - Vary the values across different generations (do not repeat too often).
+    - Keep the language natural and fluent, as if asked by a real person.
+    - Do not output the template again, only the generated queries.
+
+    Return the result as a JSON array of strings and nothing else.

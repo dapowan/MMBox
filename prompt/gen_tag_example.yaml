@@ -1,0 +1,54 @@
+name: "Generate Examples for a Tag"
+version: "1.0"
+purpose: "Ask an LLM to produce example values for a given tag used in a query-template system."
+
+placeholders:
+  - name: "{tag}"
+    meaning: "The literal placeholder token you use in templates (e.g., <time>, <place>, <person>, {action}, <activity>, etc.). Use the angle-bracketed form."
+  - name: "{description}"
+    meaning: "A concise definition of what values the tag should represent (semantics, scope, constraints)."
+  - name: "{examples}"
+    meaning: "A few examples that LLM can refer to."
+  - name: "{n_output}"
+    meaning: "How many values to generate (e.g., 15)."
+
+prompt_template: |
+  You are helping me create examples for a query generation system about user's daily lives.
+  I have a tag called {tag}, which is defined as: "{description}". Here are some examples: {examples}.
+
+  Please generate {n_output} diverse example values for {tag}.
+  - Keep examples short and natural (1–4 words).
+  - Make them realistic and varied across daily life contexts.
+  - Do not repeat the wording of the description itself.
+  - Return them as a JSON array of strings and nothing else.
+
+target_output:
+  type: "json_array"
+  schema: "array<string>"
+  constraints:
+    unique: true
+    min_items: 1
+    max_words_per_item: 4
+  examples_expected_shape:
+    - "Monday morning"
+    - "left home"
+    - "call mom"
+  regex_extract_target_output:
+    pattern: "(?s)\\[\\s*(?:\\\"(?:\\\\.|[^\\\"\\\\])*\\\"\\s*(?:,\\s*\\\"(?:\\\\.|[^\\\"\\\\])*\\\"\\s*)*)?\\]"
+    flags: "DOTALL"
+    notes: "Captures the first well-formed JSON array of strings from the model output, even if the model adds extra text. Use group 0 (the whole match)."
+
+example_instantiation:
+  placeholders:
+    "{tag}": "{action}"
+    "{description}": "short-term or punctual actions (instantaneous events), e.g., left home, woke up, arrived at office"
+    "<n_examples>": "15"
+  rendered_prompt: |
+    You are helping me create placeholder examples for a query generation system.
+    I have a tag called {action}, which is defined as: "short-term or punctual actions (instantaneous events), e.g., left home, woke up, arrived at office".
+
+    Please generate 15 diverse example values for {action}.
+    - Keep examples short and natural (1–4 words).
+    - Make them realistic and varied across daily life contexts.
+    - Do not repeat the wording of the description itself.
+    - Return them as a JSON array of strings and nothing else.

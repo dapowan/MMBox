@@ -1,0 +1,78 @@
+name: Generate Query Templates for a Query Type
+version: "1.0"
+purpose: >
+  Ask an LLM to generate query templates for a specific query type
+  (e.g., Time-Oriented, Location, Person).
+  Templates must include placeholders like <time>, <place>, <person>, etc.
+
+placeholders:
+  - name: "<query>"
+    meaning: >
+      The category of query for which templates should be generated,
+      e.g., "Time-Oriented", "Duration/Quantitative", "Person".
+  - name: "<description>"
+    meaning: "A concise definition of what values the tag should represent (semantics, scope, constraints)."
+  - name: "<tags>"
+    meaning: >
+      A list of tags available for use in the templates.
+      Each tag should include its name (e.g., <time>) and a short description
+      of what it represents (e.g., "Represents a time period or specific date/time").
+  - name: "<n_templates>"
+    meaning: >
+      How many templates should be generated (e.g., 7).
+
+prompt_template: |
+  You are helping me create natural-language query templates for a memory system.
+  The query type is: <query>, which is defined as: "<description>". Here are some examples: <examples>.
+
+  Available tags you can use:
+  <tags>
+
+  Please generate <n_templates> diverse templates for this query type.
+  - Templates must use one or more placeholders from the list above.
+  - Templates should be short, natural, and in the form of user questions.
+  - Do not fill placeholders with actual examples; keep them as tokens like <time>, <place>.
+  - Ensure templates reflect the intent of the query type.
+
+  Return them as a JSON array of strings and nothing else.
+
+target_output:
+  type: json_array
+  schema: array<string>
+  constraints:
+    unique: true
+    min_items: 1
+  examples_expected_shape:
+    - "On which <time> did I spend the most time at <place>?"
+    - "When did I last <action> at <place>?"
+    - "What was the first thing I did after <event> on <time>?"
+  regex_extract_target_output:
+    pattern: "(?s)\\[\\s*(?:\\\"(?:\\\\.|[^\\\"\\\\])*\\\"\\s*(?:,\\s*\\\"(?:\\\\.|[^\\\"\\\\])*\\\"\\s*)*)?\\]"
+    flags: "DOTALL"
+    notes: >
+      Captures the first JSON array of string templates from the model output.
+
+example_instantiation:
+  placeholders:
+    "<query_type>": "Person"
+    "<tags>": |
+      - <person>: Represents a person or group of people (e.g., Alice, my boss, roommate).
+      - <time>: Represents a time period or specific date/time (e.g., yesterday, Monday).
+      - <place>: Represents a location (e.g., school, office, gym).
+    "<n_templates>": "5"
+  rendered_prompt: |
+    You are helping me create natural-language query templates for a memory system.
+    The query type is: Person.
+
+    Available placeholders you can use:
+    - <person>: Represents a person or group of people (e.g., Alice, my boss, roommate).
+    - <time>: Represents a time period or specific date/time (e.g., yesterday, Monday).
+    - <place>: Represents a location (e.g., school, office, gym).
+
+    Please generate 5 diverse templates for this query type.
+    - Templates must use one or more placeholders from the list above.
+    - Templates should be short, natural, and in the form of user questions.
+    - Do not fill placeholders with actual examples; keep them as tokens like <time>, <place>.
+    - Ensure templates reflect the intent of the query type.
+
+    Return them as a JSON array of strings and nothing else.
