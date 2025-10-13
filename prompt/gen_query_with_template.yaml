@@ -48,11 +48,11 @@ target_output:
     - "On which Friday did I spend the most time at school?"
     - "On which day last week did I spend the most time at the gym?"
 
-regex_extract_target_output:
-  pattern: "(?s)\\[\\s*(?:\\\"(?:\\\\.|[^\\\"\\\\])*\\\"\\s*(?:,\\s*\\\"(?:\\\\.|[^\\\"\\\\])*\\\"\\s*)*)?\\]"
-  flags: "DOTALL"
-  notes: >
-    Captures the first JSON array of generated queries from the model output.
+  regex_extract_target_output:
+    pattern: "(?s)\\[\\s*(?:\\\"(?:\\\\.|[^\\\"\\\\])*\\\"\\s*(?:,\\s*\\\"(?:\\\\.|[^\\\"\\\\])*\\\"\\s*)*)?\\]"
+    flags: "DOTALL"
+    notes: >
+      Captures the first JSON array of generated queries from the model output.
 
 example_instantiation:
   placeholders:

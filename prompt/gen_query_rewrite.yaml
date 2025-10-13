@@ -1,0 +1,88 @@
+name: Daily-Life Query Sanity Check & Minimal Rewrite
+version: "1.1"
+purpose: >
+  Evaluate whether a user’s daily-life query (about actions, locations, times, people, or events)
+  is normal, meaningful, and processable by the Life Agent system.
+  If the query is already normal, return it unchanged.
+  If unclear but fixable, rewrite it minimally to preserve the original intent.
+  If gibberish or intentless, reject it.
+
+placeholders:
+  - name: "<user_query>"
+    meaning: "The user’s natural-language query about their daily life (e.g., 'When did I last go to gym?')."
+
+normality_criteria:
+  - "Refers to plausible daily-life contexts (e.g., place, activity, time, motion, person, event)."
+  - "Contains a clear question or information-seeking intent."
+  - "Not gibberish, random tokens, or meaningless phrases."
+  - "No contradictions or logically impossible statements."
+  - "Safe and compliant (no disallowed or private-sensitive content)."
+  - "Grammatically acceptable or fixable with small edits."
+
+decision_rules:
+  - "If all criteria pass → status=pass and final_query = original."
+  - "If intent is clear but expression flawed → status=rewrite (fix grammar or clarify)."
+  - "If intent is absent or nonsensical → status=reject with empty final_query."
+
+output_contract:
+  schema: |
+    {
+      "status": "pass" | "rewrite" | "reject",
+      "original_query": string,
+      "final_query": string,
+      "reason": string,
+      "confidence": number
+    }
+  constraints:
+    - "Emit EXACTLY ONE JSON object; no other text."
+    - "If rewrite, modify minimally to preserve user intent."
+    - "If reject, leave final_query empty and state reason briefly."
+
+prompt_template: |
+  You are a query evaluator for a Life Agent that answers questions about a user's daily life.
+  The user_query may ask about activities, locations, times, people, or events
+  (e.g., “When did I last go jogging?”, “What did I do after I left home yesterday?”).
+
+  TASK:
+  1) Check if the query is clear, grammatical, and meaningful.
+  2) If normal → pass.
+  3) If unclear but fixable → rewrite minimally.
+  4) If nonsensical or intentless → reject.
+
+  OUTPUT:
+  One JSON object following the schema below.
+
+  SCHEMA:
+  {
+    "status": "pass" | "rewrite" | "reject",
+    "original_query": "<user_query>",
+    "reason": "<brief justification>",
+    "final_query": "<possibly rewritten query or original_query>"
+  }
+
+  INPUT QUERY:
+  {{user_query}}
+
+examples:
+  - label: pass_verbatim
+    input: "When did I last arrive at the office?"
+    output: |
+      {"status":"pass","original_query":"When did I last arrive at the office?","final_query":"When did I last arrive at the office?","reason":"Clear daily-life question","confidence":0.94}
+
+  - label: minimal_rewrite
+    input: "yesterday what do i after leave home"
+    output: |
+      {"status":"rewrite","original_query":"yesterday what do i after leave home","final_query":"What did I do after I left home yesterday?","reason":"Unclear syntax; rewritten for clarity","confidence":0.81}
+
+  - label: reject_unrelated
+    input: "banana train galaxy ???"
+    output: |
+      {"status":"reject","original_query":"banana train galaxy ???","final_query":"","reason":"No identifiable daily-life intent","confidence":0.35}
+
+target_output:
+  type: "json_object_only"
+  regex_extractors:
+    json_object:
+      pattern: "(?s)\\{.*\\}"
+      flags: "DOTALL"
+      notes: "Extract the single JSON object from model output."

@@ -3,13 +3,14 @@
     {
       "type": "Time",
       "templates": [
-        "On which <time> did I spend the most time at <place>?",
         "When did I last <action> at <place>?",
         "What time did I leave <place> on <time>?",
-        "What was the first thing I did after <event> on <time>?",
         "When was the earliest I arrived at <place> during <time>?",
-        "On which date did I start <activity> again?",
+        "On which date did I start <activity>?",
         "What time did I usually go to <place> during <time>?"
+      ],
+      "templates_backup": [
+        "On which <time> did I spend the most time at <place>?"
       ]
     },
     {
@@ -19,9 +20,11 @@
         "What was my total <activity> time during <time>?",
         "How many hours did I spend commuting by <transport> in <time>?",
         "How many minutes did I <action> after leaving <place> on <time>?",
-        "What is the average time I stayed at <place> over <time>?",
-        "How many <count> of <event> did I have during <time>?",
         "How long did I sleep on <time>?"
+      ],
+      "templates_backup": [
+        "What is the average time I stayed at <place> over <time>?",
+        "How many <count> of <event> did I have during <time>?"
       ]
     },
     {
@@ -29,8 +32,11 @@
       "templates": [
         "How often did I <action> during <time>?",
         "On how many days did I visit <place> in <time>?",
+        "How frequently did I do <activity> in the <time>?"
+      ],
+      "templates_backup": [
         "How many times did I meet <person> in <time>?",
-        "How frequently did I do <activity> in the <time>?",
+        "How many <count> of <event> did I have during <time>?",
         "What was my most frequent <place> during <time>?",
         "How many days did I skip <activity> in <time>?",
         "How often did I order <category> food in <time>?"
@@ -41,7 +47,9 @@
       "templates": [
         "Did I have a <event> on <time>?",
         "Was I at <place> on <time>?",
-        "Did I <action> after leaving <place> on <time>?",
+        "Did I <action> after leaving <place> on <time>?"
+      ],
+      "templates_backup": [
         "Did I meet <person> during <time>?",
         "Was there any <activity> recorded on <time>?",
         "Did I travel by <transport> on <time>?",
@@ -54,23 +62,29 @@
         "What did I do on <time>?",
         "What did I do after I left <place> on <time>?",
         "Where did I go before <event> on <time>?",
-        "List the sequence of places I visited on <time>.",
-        "What happened between leaving <place> and arriving at <place> on <time>?",
         "What did I do right after <activity> on <time>?",
         "What was the next action after meeting <person> on <time>?",
+        "What was the first thing I did after <event> on <time>?"
+      ],
+      "templates_backup": [
+        "What happened between leaving <place> and arriving at <place> on <time>?",
         "What was the last thing I did before going home on <time>?"
       ]
     },
     {
       "type": "Place",
       "templates": [
-        "Where did I spend most of my time on <time>?",
         "Which places did I visit during <time>?",
-        "What was my most visited <place> type during <time>?",
+        "List the sequence of places I visited on <time>.",
         "Where was I at <time> of day on <time>?",
         "At which <place> did I start my day on <time>?",
         "From which <place> did I return home on <time>?",
         "Which city/area was I in during <time>?"
+      ],
+      "templates_backup": [
+        "Where did I spend most of my time on <time>?",
+        "What was the last thing I did before going home on <time>?",
+        "What was my most visited <place> type during <time>?"
       ]
     },
     {
@@ -91,10 +105,12 @@
         "Has my <activity> time increased over <time>?",
         "Did I exercise more this week compared to last week?",
         "How has my sleep duration changed over <time>?",
-        "Is there a trend in my visits to <place> across <time>?",
         "Are my meeting counts rising or falling over <time>?",
         "Is my average commute duration getting shorter over <time>?",
         "How has my time at home varied throughout <time>?"
+      ],
+      "templates_backup": [
+        "Is there a trend in my visits to <place> across <time>?"
       ]
     },
     {
@@ -163,12 +179,11 @@
       "tag": "<action>",
       "description": "Represents a short-term or punctual action (instantaneous events).",
       "examples": [
-        "left home",
+        "left",
         "woke up",
         "went to bed",
-        "arrived at school",
-        "checked phone",
-        "entered the office"
+        "arrived at",
+        "entered"
       ]
     },
     {

@@ -1,7 +1,13 @@
 import json
 import os
+import re
 import numpy as np
 from swift.llm import InferEngine, InferRequest, PtEngine, RequestConfig, get_template, load_dataset
+
+from generate_workflow_from_query import extract_tool_names
+from program_analyzer import PythonProgramAnalyzer
+from statistic import compare_report_sets
+from utils import write_jsonl
 
 os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 max_new_tokens = 1024
@@ -35,8 +41,8 @@ def infer(engine: InferEngine, infer_request: InferRequest):
     resp_list = engine.infer([infer_request], request_config)
     query = infer_request.messages[0]['content']
     response = resp_list[0].choices[0].message.content
-    print(f'query: {query}')
-    print(f'response: {response}')
+    # print(f'query: {query}')
+    # print(f'response: {response}')
     return response
 
 
@@ -69,26 +75,32 @@ def extract_query_response_from_messages(messages):
 def evaluate_metric_func(response, gt):
     return {'a': 1.0, 'b': 2.0}
 
-def evaluate(model, checkpoint, system, test_dataset=None, output_path=None, query_list=None, infer_backend='pt', stream=False):
+def evaluate(model, checkpoint, agent_prompt_meta, tools_meta, test_dataset=None, output_path=None, query_list=None, infer_backend='pt', stream=False):
     # Get model and template, and load LoRA weights.
     engine = PtEngine(model, adapters=[checkpoint])
     template = get_template(engine.model_meta.template, engine.processor, default_system=system)
     # You can modify the `default_template` directly here, or pass it in during `engine.infer`.
     engine.default_template = template
 
+    tool_names = extract_tool_names(tools_meta)
+    analyzer = PythonProgramAnalyzer(tool_names)
 
     infer_func = infer_stream if stream else infer
 
+    response_target_pattern = agent_prompt_meta["target_output"]["regex_extractors"]["prog_block"]["pattern"]
     summary = {}
     if query_list is not None:
         for query, i in enumerate(query_list):
             response = infer_func(engine, InferRequest(messages=[{'role': 'user', 'content': query}]))
             print('-' * 50)
-            summary[i] = {"system": system, "query": query, "response": response}
+            # summary[i] = {"system": system, "query": query, "response": response}
+            summary[i] = {"query": query, "response": response}
     elif test_dataset is not None:
         test_dataset, _ = load_dataset(test_dataset, split_dataset_ratio=0.0, num_proc=1, seed=42)
 
         n = 0
+        results_gt = []
+        results_es = []
         for ex in test_dataset:
             messages = ex['messages']
             query, gt = extract_query_response_from_messages(messages)
@@ -96,10 +108,41 @@ def evaluate(model, checkpoint, system, test_dataset=None, output_path=None, que
             if query and gt:
                 req = InferRequest(messages=[{'role': 'user', 'content': query}])
                 response = infer_func(engine, req)
-                me = evaluate_metric_func(response, gt)
-                summary[n] = {"system": system, "query": query, "gt": gt, "response": response, "metrics":me}
+
+                try:
+                    pattern = re.compile(response_target_pattern, flags=re.DOTALL)
+                    matches = pattern.findall(response)
+                    if not matches:
+                        extracted = []
+                    else:
+                        if isinstance(matches[0], tuple):
+                            extracted = [tuple(m) for m in matches]
+                        else:
+                            extracted = list(matches)
+                    workflow_generated = extracted[0]
+                    if workflow_generated:
+                        analyzer_report = analyzer.analyze(workflow_generated)
+                        results_es.append({
+                            "prompt": query,
+                            "response_workflow": workflow_generated,
+                            "report": analyzer_report,
+                        })
+                except:
+                    results_es.append({
+                        "prompt": query,
+                        "response_workflow": gt,
+                        "report": {},
+                    })
+                analyzer_report_gt = analyzer.analyze(gt)
+                results_gt.append({
+                    "prompt": query,
+                    "response_workflow": gt,
+                    "report": analyzer_report_gt,
+                })
             n += 1
-    summarize_metrics(summary)
+        write_jsonl(results_es, os.path.join(output_path, "test_report_es.jsonl"))
+        write_jsonl(results_gt, os.path.join(output_path, "test_report_gt.jsonl"))
+        summary = compare_report_sets(results_gt, results_es)
     if output_path:
         with open(os.path.join(output_path, 'summary.json'), "w", encoding="utf-8") as f:
             json.dump(summary, f, ensure_ascii=False, indent=2)

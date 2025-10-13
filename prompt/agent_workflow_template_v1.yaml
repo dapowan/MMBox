@@ -1,0 +1,254 @@
+name: Tool-Calling Daily Life Assistant (PseudoCode DSL)
+version: "3.2"
+purpose: >
+  Instruct an LLM assistant to PLAN a short program (pseudo code) that may include INTERNAL tool runs,
+  EXTERNAL tool call specs (not executed here), and CONTROL flow (vars, set, if/else, loop).
+  The program is expressed with SPECIAL TAGS (an XML-like DSL) that can naturally represent
+  calling tools inside loops and branches. All inputs reference literals or previously bound variables.
+
+placeholders:
+  - name: "<user_query>"
+    meaning: "The user's current natural-language question."
+  - name: "<internal_tools>"
+    meaning: >
+      YAML list of INTERNAL tools. Each item includes:
+      - name, description
+      - expected_inputs (JSON schema)
+      - expected_output (JSON schema)
+      - constraints/notes (deterministic, cost/latency=0).
+  - name: "<external_tools>"
+    meaning: >
+      YAML list of EXTERNAL tools. Each item includes:
+      - name, description
+      - expected_inputs (JSON schema)
+      - expected_output (JSON schema)
+      - rate_limit/policy notes, examples (optional).
+  - name: "<policies>"
+    meaning: >
+      Optional guardrails: privacy, cost ceilings, max latency, staleness windows,
+      preferred tool order, retry policy for EXTERNAL calls, caching directives.
+
+decision_rules:
+  - "Prefer INTERNAL tools if they can fully answer <user_query>."
+  - "Use EXTERNAL tools only when INTERNAL tools are insufficient."
+  - "Produce a MINIMAL program (1–30 lines) that deterministically progresses to an answer."
+  - "All tool inputs must be literals or previously-bound variables."
+  - "Bind every tool result to a variable; no anonymous results."
+  - "CONTROL flow is allowed with <var>, <set>, <if>, <else>, <end>, <loop>."
+  - "If no tools are needed, emit a single INTERNAL 'reason_and_answer' run."
+
+output_contract:
+  program_block: |
+    - Emit EXACTLY ONE top-level block:
+      <prog>
+      ... pseudo code lines with tags ...
+      <return var="v_final"/>
+      </prog>
+    - Do NOT execute EXTERNAL calls (<call>).
+    - INTERNAL runs (<run>) may be specified if immediate computation is needed.
+    - No extra prose outside the <prog> block.
+    - JSON inputs must be strict JSON with "$.var" for references.
+    - Every call/run must have an 'out' variable.
+    - End with a <return var="..."/>.
+
+prompt_template: |
+  You are a tool-planning assistant who outputs a compact PSEUDOCODE PROGRAM to process context information and answer the user's query about their daily lives.
+  Use INTERNAL <run>, EXTERNAL <call>, and CONTROL tags. Bind each result to a variable.
+  Inputs must be literals or "$.var" references. Finish with <return var="..."/>.
+
+  CONTROL TAGS REFERENCE:
+  - <var id="v"/> : Declare a variable.
+  - <set var="v"> ... </set> : Assign a literal or expression (use "$.var" to reference prior variables).
+  - <if test="EXPR"> ... </if> : Conditional branch; both sides may contain calls/runs/sets.
+  - <if test="EXPR"> ... <else> ... </if> : Conditional branches with <else>; both sides may contain calls/runs/sets.
+  - <loop over="v_list" as="item"> ... </loop> : Iterate over list variable; "item" is loop alias.
+  - <break/> : Immediately terminates only the nearest enclosing loop execution and continues with statements after the loop. Can only appear inside a <loop> block. 
+  - <call tool="..." out="v"> { JSON inputs } </call> : Specify an EXTERNAL tool call (not executed here).
+  - <run tool="..." out="v"> { JSON inputs } </run> : Run an INTERNAL tool (deterministic).
+  - <return var="v_final"/> : Mark final output variable.
+  
+  EXPRESSION SYNTAX REFERENCE:
+  Used in <if test="...">.
+  - Operands: $.var (variable), "text" (string), numbers (3.14), booleans (true/false), null.
+  - Comparison operators: ==, !=, >, <, >=, <=
+  - Logical operators: and, or, not
+  - Grouping & precedence: Parentheses () supported. Priority: () → not → comparisons → and → or
+                         
+  Notes:
+  1) For loops, place <call> inside <loop> when per-item retrieval is required.
+  2) Output only one <prog>...</prog> block.
+  
+  AVAILABLE TOOLS (INTERNAL):
+  {{internal_tools}}
+
+  AVAILABLE TOOLS (EXTERNAL):
+  {{external_tools}}
+
+  POLICIES/GUARDRAILS (optional):
+  {{policies}}
+
+  TASK:
+  1) Analyze what tools are helpful for answering the query.
+  2) Write a minimal program (1–30 lines) to organize the tools and answer the query.
+  
+  Now write the compact PSEUDOCODE PROGRAM for answering the following query:
+  {{user_query}}
+
+examples: |
+  EXAMPLE QUERY AND OUTPUT:
+  Example User Query: "On Oct 8, 2025, how much time did I spend at gym and office?"
+  
+  Example Output Program:
+  <prog>
+    <var id="v_user_query"/>
+    <set var="v_user_query">
+      "On Oct 8, 2025, how much time did I spend at gym and office?"
+    </set>
+  
+    <var id="v_time"/>
+    <run tool="extract_time_from_query" out="v_time">
+      { "text": "$.v_user_query" }
+    </run>
+  
+    <var id="v_start"/>
+    <set var="v_start">concat($.v_time.date, "T00:00:00+09:00")</set>   <!-- Asia/Beijing -->
+    <var id="v_end"/>
+    <set var="v_end">concat($.v_time.date, "T24:00:00+09:00")</set>
+
+    <var id="v_contexts"/>
+    <call tool="filter_contexts_by_time" out="v_contexts">
+      { "start": "$.v_start", "end": "$.v_end", "timezone": "Asia/Beijing" }
+    </call>
+
+    <var id="v_places"/>
+    <set var="v_places">["gym", "office"]</set>
+
+    <var id="v_totals"/>
+    <set var="v_totals">[]</set>
+  
+    <loop over="v_places" as="p">
+      <var id="v_durations"/>
+      <call tool="check_duration" out="v_durations">
+        { "contexts": "$.v_contexts", "conditions": { "place": "$.p" } }
+      </call>
+
+      <var id="v_sum"/>
+      <call tool="sum_duration" out="v_sum">
+        { "durations": "$.v_durations" }
+      </call>
+
+      <set var="v_totals">
+        append($.v_totals, { "place": $.p, "total_minutes": $.v_sum.total_minutes })
+      </set>
+    </loop>
+
+    <var id="v_answer"/>
+    <run tool="reason_and_answer" out="v_answer">
+      { "date": "$.v_time.date", "per_place": "$.v_totals" }
+    </run>
+  
+    <return var="v_answer"/>
+  </prog>
+
+target_output:
+  type: "union"
+  variants:
+    - name: "prog_minimal"
+      example: |
+        <prog>
+          <var id="v_minutes"/>
+          <run tool="compute_walk_minutes" out="v_minutes">{ "from": "logs.today" }</run>
+          <var id="v_answer"/>
+          <run tool="reason_and_answer" out="v_answer">{ "minutes": "$.v_minutes" }</run>
+          <return var="v_answer"/>
+        </prog>
+    - name: "prog_with_loop_and_calls"
+      example: |
+        <prog>
+          <var id="v_dates"/>
+          <set var="v_dates">["2025-10-08","2025-10-09","2025-10-10"]</set>
+
+          <var id="v_city"/>
+          <set var="v_city">"Beijing"</set>
+
+          <var id="v_daily"/>
+          <set var="v_daily">[]</set>
+
+          <loop over="v_dates" as="d">
+            <var id="v_fcst"/>
+            <call tool="weather.get_forecast" out="v_fcst">
+              { "city": "$.v_city", "date": "$.d" }
+            </call>
+            <set var="v_daily">
+              append($.v_daily, { "date": $.d, "rain": $.v_fcst.rain_prob })
+            </set>
+          </loop>
+
+          <var id="v_best"/>
+          <run tool="pick_lowest_rain_day" out="v_best">{ "candidates": "$.v_daily" }</run>
+
+          <var id="v_answer"/>
+          <run tool="reason_and_answer" out="v_answer">{ "choice": "$.v_best" }</run>
+          <return var="v_answer"/>
+        </prog>
+  constraints:
+    exactly_one_block: true
+    no_additional_text: true
+  regex_extractors:
+    prog_block:
+      pattern: "(?s)<prog>.*?</prog>"
+      flags: "DOTALL"
+      notes: "Captures the full program body (group 1) and the final var name (group 2)."
+    call_tag:
+      pattern: "(?s)<call\\s+tool=\\\"([A-Za-z0-9_.-]+)\\\"\\s+out=\\\"([A-Za-z0-9_.-]+)\\\">\\s*(\\{.*?\\})\\s*</call>"
+      flags: "DOTALL"
+      notes: "Extracts tool name, output var, and JSON inputs for EXTERNAL calls."
+    run_tag:
+      pattern: "(?s)<run\\s+tool=\\\"([A-Za-z0-9_.-]+)\\\"\\s+out=\\\"([A-Za-z0-9_.-]+)\\\">\\s*(\\{.*?\\})\\s*</run>"
+      flags: "DOTALL"
+      notes: "Extracts tool name, output var, and JSON inputs for INTERNAL runs."
+    loop_block:
+      pattern: "(?s)<loop\\s+over=\\\"([A-Za-z0-9_.-]+)\\\"\\s+as=\\\"([A-Za-z0-9_.-]+)\\\">(.*?)<end/>"
+      flags: "DOTALL"
+      notes: "Captures loop iterator var names and inner body."
+    if_block:
+      pattern: "(?s)<if\\s+test=\\\"([^\\\"]+)\\\">(.*?)(?:<else>(.*?))?<end/>"
+      flags: "DOTALL"
+      notes: "Captures condition (group 1), if-body (group 2), optional else-body (group 3)."
+    set_block:
+      pattern: "(?s)<set\\s+var=\\\"([A-Za-z0-9_.-]+)\\\">\\s*(.*?)\\s*</set>"
+      flags: "DOTALL"
+      notes: "Extracts target var and assigned literal/expression."
+    var_decl:
+      pattern: "<var\\s+id=\\\"([A-Za-z0-9_.-]+)\\\"\\s*/>"
+      flags: ""
+      notes: "Matches variable declarations."
+
+examples_expected_shape:
+  - label: "Pure internal run"
+    value: |
+      <prog>
+      <var id="v_q"/><set var="v_q">"How many minutes did I walk today?"</set>
+      <var id="v_mins"/>
+      <run tool="compute_walk_minutes" out="v_mins">{ "from": "logs.today" }</run>
+      <var id="v_final"/>
+      <run tool="reason_and_answer" out="v_final">{ "minutes": "$.v_mins" }</run>
+      <return var="v_final"/>
+      </prog>
+  - label: "Looping external calls with reduce"
+    value: |
+      <prog>
+      <var id="v_places"/><set var="v_places">["gym","office","home"]</set>
+      <var id="v_date"/><set var="v_date">"2025-10-08"</set>
+      <var id="v_durations"/><set var="v_durations">[]</set>
+      <loop over="v_places" as="p">
+        <var id="v_rec"/>
+        <call tool="location.get_stay" out="v_rec">{ "place": "$.p", "date": "$.v_date" }</call>
+        <set var="v_durations">append($.v_durations, { "place": $.p, "mins": $.v_rec.minutes })</set>
+      </loop>
+      <var id="v_best"/>
+      <run tool="argmax_by_key" out="v_best">{ "items": "$.v_durations", "key": "mins" }</run>
+      <var id="v_answer"/>
+      <run tool="reason_and_answer" out="v_answer">{ "top": "$.v_best" }</run>
+      <return var="v_answer"/>
+      </prog>

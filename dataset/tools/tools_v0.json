@@ -1,0 +1,131 @@
+{
+  "internal_tools": [
+    {
+      "name": "extract_time_from_query",
+      "purpose": "Pull a natural-language time phrase from a user query.",
+      "args": { "query": "string (required)" },
+      "returns": { "time": "string | '' (e.g., 'yesterday', 'last week', '2025-09-01')" },
+      "notes": "Return empty string if none."
+    }
+  ],
+  "external_tools": [
+    {
+      "name": "resolve_time_window",
+      "purpose": "Convert <time> text to absolute [start, end).",
+      "args": {
+        "time_text": "string (required)",
+        "timezone": "string = 'Asia/Beijing'"
+      },
+      "returns": {
+        "start": "ISO-8601 datetime (inclusive)",
+        "end": "ISO-8601 datetime (exclusive)"
+      },
+      "notes": "Understands ranges (e.g., 'Sep 1-7, 2025') and parts of day ('morning')."
+    },
+    {
+      "name": "split_time_window",
+      "purpose": "Bucket [start, end) into fixed-size bins.",
+      "args": {
+        "start": "ISO-8601 (required)",
+        "end": "ISO-8601 (required)",
+        "freq_unit": "one of ['minute','hour','day','week','month'] (required)",
+        "freq_value": "int >=1 (required)",
+        "timezone": "string = 'Asia/Beijing'",
+        "include_partial": "bool = true"
+      },
+      "returns": [
+        {
+          "start": "ISO-8601 (inclusive)",
+          "end": "ISO-8601 (exclusive)",
+          "label": "string",
+          "index": "int"
+        }
+      ],
+      "notes": "For trend/aggregation by time."
+    },
+    {
+      "name": "filter_contexts_by_time",
+      "purpose": "Fetch flat contexts within [start, end).",
+      "args": {
+        "start": "ISO-8601 (required)",
+        "end": "ISO-8601 (required)",
+        "timezone": "string = 'Asia/Beijing'"
+      },
+      "returns": "array<object> (contexts)",
+      "notes": "No bucketing or extra filters."
+    },
+    {
+      "name": "check_existence",
+      "purpose": "Does any context match conditions?",
+      "args": {
+        "contexts": "array<object> (required)",
+        "conditions": "object {place?, action?, activity?, person?, event?, weather?} (required)"
+      },
+      "returns": { "exists": "boolean" },
+      "notes": "Conditions are exact-match if provided."
+    },
+    {
+      "name": "check_count",
+      "purpose": "How many contexts match conditions?",
+      "args": {
+        "contexts": "array<object> (required)",
+        "conditions": "object {place?, action?, activity?, person?, event?, weather?} (required)"
+      },
+      "returns": { "count": "int" },
+      "notes": "Conditions are exact-match if provided."
+    },
+    {
+      "name": "check_status",
+      "purpose": "Get distinct target field values around matches (with optional offset).",
+      "args": {
+        "contexts": "array<object> (required, time-ascending preferred)",
+        "target_context": "one of ['place','action','activity','person','event','weather'] (required)",
+        "conditions": "object {place?, action?, activity?, person?, event?, weather?} (required)",
+        "offset": "int = 0  (… -1 prev, 0 self, 1 next)"
+      },
+      "returns": {
+        "exists": "boolean",
+        "values": "array<string> (distinct, first-seen order)"
+      },
+      "notes": "Out-of-range offsets ignored."
+    },
+    {
+      "name": "check_duration",
+      "purpose": "Extract (start,end) durations from contexts matching conditions.",
+      "args": {
+        "contexts": "array<object> (required; duration items have 'start' and 'end')",
+        "conditions": "object {place?, action?, activity?, person?, event?, weather?} (required)"
+      },
+      "returns": [
+        { "start": "string", "end": "string" }
+      ],
+      "notes": "Returns [] if no matched durations."
+    },
+    {
+      "name": "sum_duration",
+      "purpose": "Sum a list of durations.",
+      "args": {
+        "durations": "array<{start:string,end:string}> (required; same format as check_duration)"
+      },
+      "returns": { "total_minutes": "number" },
+      "notes": "Adds all intervals; returns 0 for empty."
+    },
+    {
+      "name": "sum_frequency",
+      "purpose": "Sum a list of integer counts.",
+      "args": { "frequency_list": "array<int> (required)" },
+      "returns": { "count": "int" },
+      "notes": "Frequency queries: e.g., 'How many times…?'"
+    },
+    {
+      "name": "summarize",
+      "purpose": "Natural-language summary of contexts.",
+      "args": {
+        "contexts": "array<object> (required)",
+        "target_context": "array of any of ['place','action','activity','person','event','weather'] (optional)"
+      },
+      "returns": { "summary": "string" },
+      "notes": "If target_context omitted, include all available fields."
+    }
+  ]
+}

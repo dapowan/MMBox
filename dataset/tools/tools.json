@@ -1,0 +1,1129 @@
+{
+  "internal_tools": [
+    {
+      "name": "extract_time_from_query",
+      "description": "Extract natural-language time expressions from a user query. Designed to capture references like 'yesterday', 'last week', 'tomorrow morning', '2025-09-01'.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "The raw natural-language query from the user."
+          }
+        },
+        "required": [
+          "query"
+        ]
+      },
+      "returns": {
+        "type": "object",
+        "properties": {
+          "time": {
+            "type": "string",
+            "description": "Time expression extracted from the query, e.g. 'yesterday', 'last week', '2025-09-01'. Empty if none found."
+          }
+        }
+      },
+      "examples": [
+        {
+          "input": {
+            "query": "What did I do yesterday at the office?"
+          },
+          "output": {
+            "time": "yesterday"
+          }
+        },
+        {
+          "input": {
+            "query": "Show me all meetings on 2025-09-01."
+          },
+          "output": {
+            "time": "2025-09-01"
+          }
+        },
+        {
+          "input": {
+            "query": "Did I run last week in the park?"
+          },
+          "output": {
+            "time": "last week"
+          }
+        },
+        {
+          "input": {
+            "query": "Who did I meet?"
+          },
+          "output": {
+            "time": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "extract_contexts_from_query",
+      "description": "Extract key context fields (time, place, action, activity, person, event, weather) from a natural-language user query. Useful for converting free-form questions into structured conditions for other functions.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "The raw natural-language query from the user."
+          }
+        },
+        "required": [
+          "query"
+        ]
+      },
+      "returns": {
+        "type": "object",
+        "properties": {
+          "time": {
+            "type": "string",
+            "description": "Natural-language time expression in the query (e.g., 'yesterday', 'last week', '2025-09-01')."
+          },
+          "place": {
+            "type": "string",
+            "description": "Place mentioned in the query, if any."
+          },
+          "action": {
+            "type": "string",
+            "description": "Action (short, discrete behaviors) mentioned in the query, if any."
+          },
+          "activity": {
+            "type": "string",
+            "description": "Activity (longer-term, continuous) mentioned in the query, if any."
+          },
+          "person": {
+            "type": "string",
+            "description": "Person mentioned in the query, if any."
+          },
+          "event": {
+            "type": "string",
+            "description": "Event mentioned in the query, if any."
+          },
+          "weather": {
+            "type": "string",
+            "description": "Weather condition mentioned in the query, if any."
+          }
+        },
+        "additionalProperties": false
+      },
+      "examples": [
+        {
+          "input": {
+            "query": "When did I last meet Alice at the office yesterday?"
+          },
+          "output": {
+            "time": "yesterday",
+            "place": "office",
+            "action": "meet",
+            "person": "Alice"
+          }
+        },
+        {
+          "input": {
+            "query": "How long did I run in the park last week while it was sunny?"
+          },
+          "output": {
+            "time": "last week",
+            "activity": "run",
+            "place": "park",
+            "weather": "sunny"
+          }
+        },
+        {
+          "input": {
+            "query": "Did I attend the conference event with Bob on 2025-09-01?"
+          },
+          "output": {
+            "time": "2025-09-01",
+            "event": "conference",
+            "person": "Bob",
+            "action": "attend"
+          }
+        },
+        {
+          "input": {
+            "query": "What did I do yesterday evening?"
+          },
+          "output": {
+            "time": "yesterday evening"
+          }
+        }
+      ]
+    }
+  ],
+  "external_tools": [
+    {
+      "name": "resolve_time_window",
+      "description": "Turn a natural-language <time> (e.g., 'yesterday', 'last week', '2025-09-01', 'Sep 1-7, 2025') into an absolute [start, end). Also supports time-of-day slices like 'morning'.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "time_text": {
+            "type": "string"
+          },
+          "timezone": {
+            "type": "string",
+            "default": "Asia/Beijing"
+          }
+        },
+        "required": [
+          "time_text"
+        ]
+      },
+      "returns": {
+        "type": "object",
+        "properties": {
+          "start": {
+            "type": "string",
+            "description": "inclusive ISO-8601 datetime"
+          },
+          "end": {
+            "type": "string",
+            "description": "exclusive ISO-8601 datetime"
+          }
+        }
+      },
+      "examples": [
+        {
+          "input": {
+            "time_text": "last week"
+          },
+          "output": {
+            "start": "2025-09-29T00:00:00+09:00",
+            "end": "2025-10-06T00:00:00+09:00"
+          }
+        }
+      ]
+    },
+    {
+      "name": "split_time_window",
+      "description": "Split a resolved [start, end) time window into smaller bins for trend analysis or per-period aggregation. The bin size is specified by a frequency unit and value (e.g., freq_unit='minute', freq_value=2 means 2-minute bins).",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "start": {
+            "type": "string",
+            "description": "inclusive ISO-8601 datetime (usually from resolve_time_window)"
+          },
+          "end": {
+            "type": "string",
+            "description": "exclusive ISO-8601 datetime"
+          },
+          "freq_unit": {
+            "type": "string",
+            "enum": [
+              "minute",
+              "hour",
+              "day",
+              "week",
+              "month"
+            ],
+            "description": "the unit of the bin size"
+          },
+          "freq_value": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "the number of units per bin (e.g., 2 with freq_unit='hour' → 2-hour bins)"
+          },
+          "timezone": {
+            "type": "string",
+            "default": "Asia/Beijing",
+            "description": "IANA timezone for calendar alignment"
+          },
+          "include_partial": {
+            "type": "boolean",
+            "default": true,
+            "description": "whether to include head/tail partial bins"
+          }
+        },
+        "required": [
+          "start",
+          "end",
+          "freq_unit",
+          "freq_value"
+        ]
+      },
+      "returns": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "start": {
+              "type": "string",
+              "description": "inclusive ISO-8601 datetime of the bin"
+            },
+            "end": {
+              "type": "string",
+              "description": "exclusive ISO-8601 datetime of the bin"
+            },
+            "label": {
+              "type": "string",
+              "description": "human-friendly label (e.g., '2025-09-29', '2025-W40', '00:00-02:00')"
+            },
+            "index": {
+              "type": "integer",
+              "description": "0-based index of the bin in the split"
+            }
+          }
+        }
+      },
+      "examples": [
+        {
+          "input": {
+            "start": "2025-09-29T00:00:00+08:00",
+            "end": "2025-10-06T00:00:00+08:00",
+            "freq_unit": "day",
+            "freq_value": 1
+          },
+          "output": [
+            {
+              "start": "2025-09-29T00:00:00+08:00",
+              "end": "2025-09-30T00:00:00+08:00",
+              "label": "2025-09-29",
+              "index": 0
+            },
+            {
+              "start": "2025-09-30T00:00:00+08:00",
+              "end": "2025-10-01T00:00:00+08:00",
+              "label": "2025-09-30",
+              "index": 1
+            },
+            "... more bins ..."
+          ]
+        },
+        {
+          "input": {
+            "start": "2025-10-04T00:00:00+08:00",
+            "end": "2025-10-05T00:00:00+08:00",
+            "freq_unit": "hour",
+            "freq_value": 2
+          },
+          "output": [
+            {
+              "start": "2025-10-04T00:00:00+08:00",
+              "end": "2025-10-04T02:00:00+08:00",
+              "label": "00:00-02:00",
+              "index": 0
+            },
+            {
+              "start": "2025-10-04T02:00:00+08:00",
+              "end": "2025-10-04T04:00:00+08:00",
+              "label": "02:00-04:00",
+              "index": 1
+            },
+            "... more bins ..."
+          ]
+        }
+      ]
+    },
+    {
+      "name": "sum_frequency",
+      "description": "Sum up a list of frequency values (integers). Designed for Frequency queries like 'How many times did X happen?'.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "frequency_list": {
+            "type": "array",
+            "description": "List of frequency values (integers) to be summed.",
+            "items": {
+              "type": "integer"
+            }
+          }
+        },
+        "required": [
+          "frequency_list"
+        ]
+      },
+      "returns": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "integer",
+            "description": "The sum of all input frequency values."
+          }
+        }
+      },
+      "examples": [
+        {
+          "input": {
+            "frequency_list": [
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          "output": {
+            "count": 4
+          }
+        },
+        {
+          "input": {
+            "frequency_list": []
+          },
+          "output": {
+            "count": 0
+          }
+        },
+        {
+          "input": {
+            "frequency_list": [
+              2,
+              5,
+              3
+            ]
+          },
+          "output": {
+            "count": 10
+          }
+        }
+      ]
+    },
+    {
+      "name": "filter_contexts_by_time",
+      "description": "Fetch behavior contexts within a time window (no bucketing, no additional filters). Returns a flat array of contexts found in [start, end).",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "start": {
+            "type": "string",
+            "description": "Inclusive ISO-8601 datetime"
+          },
+          "end": {
+            "type": "string",
+            "description": "Exclusive ISO-8601 datetime"
+          },
+          "timezone": {
+            "type": "string",
+            "default": "Asia/Beijing",
+            "description": "IANA timezone used for interpreting the window"
+          }
+        },
+        "required": [
+          "start",
+          "end"
+        ]
+      },
+      "returns": {
+        "type": "array",
+        "description": "Flat list of contexts within the window.",
+        "items": {
+          "type": "object"
+        }
+      },
+      "examples": [
+        {
+          "input": {
+            "start": "2025-10-04T00:00:00+08:00",
+            "end": "2025-10-05T00:00:00+08:00"
+          },
+          "output": [
+            {
+              "timestamp": "2025-10-04T01:12:00+08:00",
+              "activity": "walk"
+            },
+            {
+              "timestamp": "2025-10-04T09:05:00+08:00",
+              "event": "meeting",
+              "person": "alice"
+            },
+            {
+              "timestamp": "2025-10-04T18:06:00+08:00",
+              "activity": "walk"
+            }
+          ]
+        },
+        {
+          "input": {
+            "start": "2025-10-01T00:00:00+08:00",
+            "end": "2025-10-08T00:00:00+08:00",
+            "timezone": "Asia/Beijing"
+          },
+          "output": [
+            {
+              "timestamp": "2025-10-01T09:05:00+08:00",
+              "event": "meeting"
+            },
+            {
+              "timestamp": "2025-10-02T08:30:00+08:00",
+              "weather": "rainy"
+            },
+            {
+              "timestamp": "2025-10-03T20:10:00+08:00",
+              "activity": "run"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "check_existence",
+      "description": "Check if there exists at least one behavior context matching given optional conditions (place, action, activity, person, event, weather). Returns true or false.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "contexts": {
+            "type": "array",
+            "description": "List of behavior contexts (time, events, visits, sessions, etc.) to check against conditions.",
+            "items": {
+              "type": "object"
+            }
+          },
+          "conditions": {
+            "type": "object",
+            "description": "Dictionary of optional conditions to check. Keys may include 'place', 'action', 'activity', 'person', 'event', 'weather'.",
+            "properties": {
+              "place": {
+                "type": "string"
+              },
+              "action": {
+                "type": "string"
+              },
+              "activity": {
+                "type": "string"
+              },
+              "person": {
+                "type": "string"
+              },
+              "event": {
+                "type": "string"
+              },
+              "weather": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "contexts",
+          "conditions"
+        ]
+      },
+      "returns": {
+        "type": "object",
+        "properties": {
+          "exists": {
+            "type": "boolean",
+            "description": "True if at least one context matches the given conditions; false otherwise."
+          }
+        }
+      },
+      "examples": [
+        {
+          "input": {
+            "contexts": [
+              {
+                "time": "10-04 09:05",
+                "place": "office",
+                "activity": "work",
+                "person": "alice",
+                "event": "meeting"
+              },
+              {
+                "time": "10-04 18:06",
+                "place": "gym",
+                "activity": "run"
+              }
+            ],
+            "conditions": {
+              "place": "office",
+              "event": "meeting"
+            }
+          },
+          "output": {
+            "exists": true
+          }
+        },
+        {
+          "input": {
+            "contexts": [
+              {
+                "time": "10-05 22:30",
+                "place": "home",
+                "activity": "sleep"
+              }
+            ],
+            "conditions": {
+              "activity": "run"
+            }
+          },
+          "output": {
+            "exists": false
+          }
+        },
+        {
+          "input": {
+            "contexts": [
+              {
+                "time": "10-02 08:30",
+                "place": "park",
+                "activity": "walk",
+                "weather": "sunny"
+              },
+              {
+                "time": "10-02 15:20",
+                "place": "office",
+                "activity": "work",
+                "weather": "rainy"
+              }
+            ],
+            "conditions": {
+              "weather": "rainy"
+            }
+          },
+          "output": {
+            "exists": true
+          }
+        }
+      ]
+    },
+    {
+      "name": "check_status",
+      "description": "Given a list of behavior contexts, return the values of one target field (e.g., weather) among contexts that satisfy optional conditions. Supports an optional 'offset' to shift to the previous/next context relative to each matched item (e.g., offset=-1 → the context immediately BEFORE each match; offset=1 → the context immediately AFTER each match). Assumes contexts are in chronological order (if a 'time' key is present, it can be used to sort).",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "contexts": {
+            "type": "array",
+            "description": "List of behavior contexts (time, events, visits, sessions, etc.). Ideally ordered by time ascending.",
+            "items": {
+              "type": "object"
+            }
+          },
+          "target_context": {
+            "type": "string",
+            "enum": [
+              "place",
+              "action",
+              "activity",
+              "person",
+              "event",
+              "weather"
+            ],
+            "description": "The field whose values you want to extract."
+          },
+          "conditions": {
+            "type": "object",
+            "description": "Optional conditions used to filter contexts before applying the offset and reading the target field. Keys may include 'place', 'action', 'activity', 'person', 'event', 'weather'.",
+            "properties": {
+              "place": {
+                "type": "string"
+              },
+              "action": {
+                "type": "string"
+              },
+              "activity": {
+                "type": "string"
+              },
+              "person": {
+                "type": "string"
+              },
+              "event": {
+                "type": "string"
+              },
+              "weather": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          },
+          "offset": {
+            "type": "integer",
+            "default": 0,
+            "description": "Relative index shift from each matched context before reading the target field: 0 = the matched item itself; -1 = previous item; 1 = next item; can be any integer. Out-of-range shifts are ignored."
+          }
+        },
+        "required": [
+          "contexts",
+          "target_context",
+          "conditions"
+        ]
+      },
+      "returns": {
+        "type": "object",
+        "properties": {
+          "exists": {
+            "type": "boolean",
+            "description": "True if any (shifted) context has a value for the target field."
+          },
+          "values": {
+            "type": "array",
+            "description": "Distinct values of the target field from the (shifted) contexts, in order of first appearance.",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "examples": [
+        {
+          "input": {
+            "contexts": [
+              {
+                "time": "10-04 08:00",
+                "activity": "commute",
+                "place": "street",
+                "weather": "cloudy"
+              },
+              {
+                "time": "10-04 08:30",
+                "activity": "arrive",
+                "place": "office",
+                "event": "badge_in"
+              },
+              {
+                "time": "10-04 09:00",
+                "activity": "work",
+                "place": "office"
+              },
+              {
+                "time": "10-04 12:00",
+                "activity": "lunch",
+                "place": "cafeteria"
+              }
+            ],
+            "target_context": "activity",
+            "conditions": {
+              "place": "office"
+            },
+            "offset": -1
+          },
+          "output": {
+            "exists": true,
+            "values": [
+              "commute",
+              "arrive"
+            ]
+          }
+        },
+        {
+          "input": {
+            "contexts": [
+              {
+                "time": "10-01 09:00",
+                "event": "meeting",
+                "person": "alice",
+                "place": "office"
+              },
+              {
+                "time": "10-01 10:15",
+                "activity": "coffee",
+                "place": "pantry"
+              },
+              {
+                "time": "10-01 11:00",
+                "event": "meeting",
+                "person": "bob",
+                "place": "office"
+              }
+            ],
+            "target_context": "person",
+            "conditions": {
+              "event": "meeting"
+            },
+            "offset": 0
+          },
+          "output": {
+            "exists": true,
+            "values": [
+              "alice",
+              "bob"
+            ]
+          }
+        },
+        {
+          "input": {
+            "contexts": [
+              {
+                "time": "10-02 18:00",
+                "activity": "run",
+                "place": "park",
+                "weather": "sunny"
+              },
+              {
+                "time": "10-02 19:00",
+                "activity": "stretch",
+                "place": "home"
+              },
+              {
+                "time": "10-02 22:30",
+                "activity": "sleep",
+                "place": "home"
+              }
+            ],
+            "target_context": "activity",
+            "conditions": {
+              "weather": "sunny"
+            },
+            "offset": 1
+          },
+          "output": {
+            "exists": true,
+            "values": [
+              "stretch"
+            ]
+          }
+        },
+        {
+          "input": {
+            "contexts": [
+              {
+                "time": "10-05 23:30",
+                "activity": "sleep",
+                "place": "home"
+              }
+            ],
+            "target_context": "weather",
+            "conditions": {
+              "activity": "run"
+            },
+            "offset": -1
+          },
+          "output": {
+            "exists": false,
+            "values": []
+          }
+        }
+      ]
+    },
+    {
+      "name": "check_duration",
+      "description": "Extract contiguous time durations (start, end) from behavior contexts that match given optional conditions (place, action, activity, person, event, weather). Returns an array of duration objects.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "contexts": {
+            "type": "array",
+            "description": "List of behavior contexts (events, visits, sessions, etc.). Contexts that represent durations should contain 'start' and 'end' fields.",
+            "items": {
+              "type": "object"
+            }
+          },
+          "conditions": {
+            "type": "object",
+            "description": "Dictionary of optional conditions to filter contexts before extracting durations. Keys may include 'place', 'action', 'activity', 'person', 'event', 'weather'.",
+            "properties": {
+              "place": {
+                "type": "string"
+              },
+              "action": {
+                "type": "string"
+              },
+              "activity": {
+                "type": "string"
+              },
+              "person": {
+                "type": "string"
+              },
+              "event": {
+                "type": "string"
+              },
+              "weather": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "contexts",
+          "conditions"
+        ]
+      },
+      "returns": {
+        "type": "array",
+        "description": "Array of duration objects for all matched contexts that have both start and end.",
+        "items": {
+          "type": "object",
+          "properties": {
+            "start": {
+              "type": "string",
+              "description": "Start time of the duration"
+            },
+            "end": {
+              "type": "string",
+              "description": "End time of the duration"
+            }
+          },
+          "required": [
+            "start",
+            "end"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "input": {
+            "contexts": [
+              {
+                "time": "10-04 08:10",
+                "activity": "walk"
+              },
+              {
+                "time": "10-04 09:05",
+                "event": "meeting",
+                "person": "alice"
+              },
+              {
+                "time": "10-04 18:05",
+                "activity": "walk"
+              }
+            ],
+            "conditions": {
+              "activity": "walk"
+            }
+          },
+          "output": [
+            {
+              "start": "10-04 08:10",
+              "end": "10-04 08:55"
+            },
+            {
+              "start": "10-04 18:05",
+              "end": "10-04 18:35"
+            }
+          ]
+        },
+        {
+          "input": {
+            "contexts": [
+              {
+                "time": "10-01 13:00",
+                "place": "office",
+                "event": "meeting",
+                "person": "bob"
+              },
+              {
+                "time": "10-01 15:00",
+                "place": "office",
+                "event": "meeting",
+                "person": "alice"
+              },
+              {
+                "time": "10-01 20:10",
+                "activity": "run"
+              }
+            ],
+            "conditions": {
+              "event": "meeting",
+              "place": "office"
+            }
+          },
+          "output": [
+            {
+              "start": "10-01 13:00",
+              "end": "10-01 14:00"
+            },
+            {
+              "start": "10-01 15:00",
+              "end": "10-01 16:15"
+            }
+          ]
+        },
+        {
+          "input": {
+            "contexts": [
+              {
+                "time": "10-03 22:30",
+                "activity": "sleep"
+              }
+            ],
+            "conditions": {
+              "activity": "walk"
+            }
+          },
+          "output": []
+        }
+      ]
+    },
+    {
+      "name": "sum_duration",
+      "description": "Sum up a list of durations defined by start and end times. Designed for Duration queries like 'How long did I walk today?'.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "durations": {
+            "type": "array",
+            "description": "List of duration intervals, each with start and end time in 'MM-DD HH:MM' format.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "start": {
+                  "type": "string",
+                  "description": "Start time in 'MM-DD HH:MM' format"
+                },
+                "end": {
+                  "type": "string",
+                  "description": "End time in 'MM-DD HH:MM' format"
+                }
+              },
+              "required": [
+                "start",
+                "end"
+              ]
+            }
+          }
+        },
+        "required": [
+          "durations"
+        ]
+      },
+      "returns": {
+        "type": "object",
+        "properties": {
+          "total_minutes": {
+            "type": "number",
+            "description": "The total duration across all intervals in minutes."
+          }
+        }
+      },
+      "examples": [
+        {
+          "input": {
+            "durations": [
+              {
+                "start": "10-04 08:10",
+                "end": "10-04 08:40"
+              },
+              {
+                "start": "10-04 09:05",
+                "end": "10-04 09:50"
+              },
+              {
+                "start": "10-04 18:05",
+                "end": "10-04 18:35"
+              }
+            ]
+          },
+          "output": {
+            "total_minutes": 105
+          }
+        },
+        {
+          "input": {
+            "durations": []
+          },
+          "output": {
+            "total_minutes": 0
+          }
+        },
+        {
+          "input": {
+            "durations": [
+              {
+                "start": "10-01 13:00",
+                "end": "10-01 14:00"
+              },
+              {
+                "start": "10-01 15:00",
+                "end": "10-01 15:20"
+              }
+            ]
+          },
+          "output": {
+            "total_minutes": 80
+          }
+        }
+      ]
+    },
+    {
+      "name": "summarize",
+      "description": "Summarize a set of behavior contexts into a natural-language string. The summary can include selected fields (place, action, activity, person, event, weather) or all fields by default.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "contexts": {
+            "type": "array",
+            "description": "List of behavior contexts (time, events, visits, sessions, etc.) to summarize.",
+            "items": {
+              "type": "object"
+            }
+          },
+          "target_context": {
+            "type": "array",
+            "description": "Optional list of context fields to include in the summary. Valid values are ['place','action','activity','person','event','weather']. Default is all.",
+            "items": {
+              "type": "string",
+              "enum": [
+                "place",
+                "action",
+                "activity",
+                "person",
+                "event",
+                "weather"
+              ]
+            }
+          }
+        },
+        "required": [
+          "contexts"
+        ]
+      },
+      "returns": {
+        "type": "object",
+        "properties": {
+          "summary": {
+            "type": "string",
+            "description": "Natural-language summary of the selected target contexts across the input."
+          }
+        }
+      },
+      "examples": [
+        {
+          "input": {
+            "contexts": [
+              {
+                "time": "10-04 08:00",
+                "place": "park",
+                "activity": "run",
+                "weather": "sunny"
+              },
+              {
+                "time": "10-04 09:00",
+                "place": "office",
+                "activity": "work",
+                "event": "meeting",
+                "person": "alice"
+              },
+              {
+                "time": "10-04 12:00",
+                "place": "cafeteria",
+                "activity": "lunch"
+              }
+            ],
+            "target_context": [
+              "place",
+              "activity"
+            ]
+          },
+          "output": {
+            "summary": "Started the day with a run at the park, then worked in the office, and later had lunch in the cafeteria."
+          }
+        },
+        {
+          "input": {
+            "contexts": [
+              {
+                "time": "10-02 18:00",
+                "activity": "run",
+                "place": "park",
+                "weather": "sunny"
+              },
+              {
+                "time": "10-02 22:30",
+                "activity": "sleep",
+                "place": "home"
+              }
+            ]
+          },
+          "output": {
+            "summary": "In the evening, went for a run at the park while it was sunny, then returned home to sleep."
+          }
+        }
+      ]
+    }
+  ]
+}

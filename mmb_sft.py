@@ -3,6 +3,7 @@ import os
 import multiprocessing as mp
 
 from evaluate import evaluate
+from utils import read_yaml_file, load_json
 
 os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 
@@ -12,7 +13,7 @@ from swift.tuners import Swift, LoraConfig
 from swift.trainers import Seq2SeqTrainer, Seq2SeqTrainingArguments
 
 
-def main(model_id_or_path, dataset, output_dir, system, dataset_test=None):
+def main(model_id_or_path, dataset, output_dir, agent_prompt_meta, tools_meta, dataset_test=None):
     logger = get_logger()
     seed_everything(42)
 
@@ -75,8 +76,7 @@ def main(model_id_or_path, dataset, output_dir, system, dataset_test=None):
     # # ====== model & template & lora ======
     model, tokenizer = get_model_tokenizer(model_id_or_path)
     logger.info(f'model_info: {model.model_info}')
-    template = get_template(model.model_meta.template, tokenizer,
-                            default_system=system, max_length=max_length)
+    template = get_template(model.model_meta.template, tokenizer, max_length=max_length) #  default_system=system,
     template.set_mode('train')
 
     target_modules = find_all_linears(model)
@@ -88,7 +88,6 @@ def main(model_id_or_path, dataset, output_dir, system, dataset_test=None):
     logger.info(f'model: {model}')
     model_parameter_info = get_model_parameter_info(model)
     logger.info(f'model_parameter_info: {model_parameter_info}')
-
 
 
     # ====== encode ======
@@ -120,16 +119,19 @@ def main(model_id_or_path, dataset, output_dir, system, dataset_test=None):
 
 
     if dataset_test is not None:
-        evaluate(model_id_or_path, last_model_checkpoint, system, dataset_test, output_path=output_dir)
+        evaluate(model_id_or_path, last_model_checkpoint, agent_prompt_meta, tools_meta,
+                 test_dataset=dataset_test, output_path=output_dir)
 
 if __name__ == "__main__":
     mp.freeze_support()   # Windows 安全导入建议
     system = '''You are a helpful assistant that can analyze user's query and call correct tools to handle it.'''
     model_id_or_path = 'Qwen/Qwen3-8B-Base'
-    output_dir = 'output/t0/'
-    dataset_train = ['./dataset/v0_train.jsonl']  #
-    dataset_test = ['./dataset/v0_test.jsonl']
-    main(model_id_or_path, dataset_train, output_dir, system, dataset_test=dataset_test)
+    output_dir = 'output/t1/'
+    dataset_train = ['./dataset/v1_train.jsonl']  #
+    dataset_test = ['./dataset/v1_test.jsonl']
+    agent_prompt_meta = read_yaml_file("prompt/agent_workflow_template_v3.yaml")
+    tools_meta = load_json("dataset/tools/tools_v1.json")
+    main(model_id_or_path, dataset_train, output_dir, agent_prompt_meta, tools_meta, dataset_test=dataset_test)
 
     # Visualize the training loss.
     # You can also use the TensorBoard visualization interface during training by entering

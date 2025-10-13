@@ -1,6 +1,7 @@
 import json
 import os
-from typing import Any, Union, List, Dict
+from pathlib import Path
+from typing import Any, Union, List, Dict, Optional
 
 import yaml
 
@@ -72,9 +73,15 @@ def string_to_json(s: str):
         return None
 
 
-def save_dict_to_json(data: Dict[str, Any], path: str, indent: int = 2, overwrite: bool = True):
+def save_dict_to_json(
+    data: Dict[str, Any],
+    path: str,
+    indent: int = 2,
+    overwrite: bool = True
+) -> None:
     """
-    保存一个字典到 JSON 文件
+    保存一个字典到 JSON 文件。
+    若路径不存在，会自动创建目录。
 
     Parameters
     ----------
@@ -82,18 +89,39 @@ def save_dict_to_json(data: Dict[str, Any], path: str, indent: int = 2, overwrit
         要保存的字典
     path : str
         保存路径，例如 "output.json"
-    indent : int
+    indent : int, optional
         缩进空格数，默认 2，方便阅读
-    overwrite : bool
-        True 表示覆盖写入，False 表示追加写入一行（JSONL）
+    overwrite : bool, optional
+        True 表示覆盖写入 JSON 文件；
+        False 表示以 JSONL 格式追加写入一行。
     """
+    # 确保目录存在
+    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+
     mode = "w" if overwrite else "a"
     with open(path, mode, encoding="utf-8") as f:
         if overwrite:
-            json.dump(data, f, indent=indent)
+            json.dump(data, f, ensure_ascii=False, indent=indent)
         else:
-            f.write(json.dumps(data) + "\n")
+            f.write(json.dumps(data, ensure_ascii=False) + "\n")
 
+
+def load_json(path):
+    """
+    Load a JSON file and return it as a Python object.
+
+    Args:
+        path (str or Path): Path to the JSON file.
+
+    Returns:
+        dict or list: Parsed JSON object.
+    """
+    path = Path(path)
+    if not path.exists():
+        raise FileNotFoundError(f"JSON file not found: {path}")
+
+    with open(path, "r", encoding="utf-8") as f:
+        return json.load(f)
 
 def find_objects(data: List[Dict[str, Any]], key: str, value: Any) -> List[Dict[str, Any]]:
     """
@@ -120,3 +148,49 @@ def read_yaml_file(path: str):
     with open(path, "r", encoding="utf-8") as f:
         data = yaml.safe_load(f)
     return data
+
+def read_jsonl(path: str, encoding: str = "utf-8") -> List[Dict[str, Any]]:
+    """
+    Read a .jsonl (JSON Lines) file and return a list of JSON objects.
+
+    Args:
+        path: Path to the .jsonl file.
+        encoding: File encoding (default: utf-8).
+
+    Returns:
+        List of dictionaries, one per line.
+    """
+    data = []
+    with open(path, "r", encoding=encoding) as f:
+        for line in f:
+            line = line.strip()
+            if not line:  # skip empty lines
+                continue
+            data.append(json.loads(line))
+    return data
+
+def write_jsonl(
+    data: List[Dict[str, Any]],
+    path: str,
+    append: bool = False
+) -> None:
+    """
+    将一组字典写入 JSONL (JSON Lines) 文件。
+    若路径不存在，会自动创建目录。
+
+    Parameters
+    ----------
+    data : list[dict]
+        要写入的 JSON 对象列表。
+    path : str
+        输出文件路径，例如 "output/data.jsonl"。
+    append : bool, optional
+        是否追加写入。默认 False 表示覆盖。
+    """
+    # 确保目录存在
+    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+
+    mode = "a" if append else "w"
+    with open(path, mode, encoding="utf-8") as f:
+        for item in data:
+            f.write(json.dumps(item, ensure_ascii=False) + "\n")

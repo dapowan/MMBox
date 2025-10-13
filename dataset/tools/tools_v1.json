@@ -1,0 +1,117 @@
+{
+  "internal_tools": [
+    {
+      "name": "extract_time_from_query",
+      "def": "extract_time_from_query(query: str) -> str",
+      "doc": "Extracts a natural-language time phrase from a user query (e.g., 'yesterday', 'last week', '2025-09-01'). Returns '' if none found.",
+      "args_detail": {
+        "query": "User's natural-language query string."
+      },
+      "returns": "Natural-language time phrase string or empty string."
+    }
+  ],
+  "external_tools": [
+    {
+      "name": "resolve_time_window",
+      "def": "resolve_time_window(time_text: str) -> dict",
+      "doc": "Parses natural-language time expressions into absolute window [start, end). Supports ranges ('Sep 1–7, 2025') and partial days ('morning').",
+      "args_detail": {
+        "time_text": "Time phrase in plain text (e.g., 'last week', '2025-09-01')."
+      },
+      "returns": { "start": "ISO-8601 datetime", "end": "ISO-8601 datetime" }
+    },
+    {
+      "name": "split_time_window",
+      "def": "split_time_window(start: str, end: str, freq_unit: str, freq_value: int, include_partial: bool = True) -> list[dict]",
+      "doc": "Splits a continuous window [start, end) into fixed-size bins. Units: minute/hour/day/week/month. Useful for trend or aggregation.",
+      "args_detail": {
+        "start": "ISO-8601 datetime string (inclusive).",
+        "end": "ISO-8601 datetime string (exclusive).",
+        "freq_unit": "One of ['minute', 'hour', 'day', 'week', 'month'].",
+        "freq_value": "Positive integer frequency value.",
+        "include_partial": "Include last partial bin if True."
+      },
+      "returns": [{ "start": "ISO-8601", "end": "ISO-8601", "label": "str", "index": "int" }]
+    },
+    {
+      "name": "filter_contexts_by_time",
+      "def": "filter_contexts_by_time(start: str, end: str) -> list[dict]",
+      "doc": "Returns all context records that fall within [start, end). No bucketing or extra filters.",
+      "args_detail": {
+        "start": "ISO-8601 datetime string (inclusive).",
+        "end": "ISO-8601 datetime string (exclusive)."
+      },
+      "returns": "List of context objects."
+    },
+    {
+      "name": "check_existence",
+      "def": "check_existence(contexts: list[dict], conditions: dict) -> bool",
+      "doc": "Checks whether any context matches the given conditions (exact match).",
+      "args_detail": {
+        "contexts": "List of context objects.",
+        "conditions": "Dictionary of filters (place?, action?, activity?, person?, event?, weather?)."
+      },
+      "returns": { "exists": "bool" }
+    },
+    {
+      "name": "check_count",
+      "def": "check_count(contexts: list[dict], conditions: dict) -> int",
+      "doc": "Counts the number of contexts satisfying the specified conditions.",
+      "args_detail": {
+        "contexts": "List of context objects.",
+        "conditions": "Dictionary of filters (place?, action?, activity?, person?, event?, weather?)."
+      },
+      "returns": { "count": "int" }
+    },
+    {
+      "name": "check_status",
+      "def": "check_status(contexts: list[dict], target_context: str, conditions: dict, offset: int = 0) -> dict",
+      "doc": "Retrieves distinct values of target_context (e.g., 'place', 'weather') near matched items. Offset -1/0/1 for prev/self/next.",
+      "args_detail": {
+        "contexts": "List of context objects sorted by time.",
+        "target_context": "One of ['place','action','activity','person','event','weather'].",
+        "conditions": "Dictionary of filters applied before target extraction.",
+        "offset": "Relative position to matched context: -1 previous, 0 self, 1 next."
+      },
+      "returns": { "exists": "bool", "values": "list[str]" }
+    },
+    {
+      "name": "check_duration",
+      "def": "check_duration(contexts: list[dict], conditions: dict) -> list[dict]",
+      "doc": "Extracts (start, end) durations from contexts matching the given conditions.",
+      "args_detail": {
+        "contexts": "List of context objects (each containing 'start' and 'end' ISO-8601 strings).",
+        "conditions": "Dictionary of filters (place?, action?, activity?, person?, event?, weather?)."
+      },
+      "returns": [{ "start": "ISO-8601 string", "end": "ISO-8601 string" }]
+    },
+    {
+      "name": "sum_duration",
+      "def": "sum_duration(durations: list[dict]) -> float",
+      "doc": "Computes total minutes across given durations. Returns 0 if list is empty.",
+      "args_detail": {
+        "durations": "List of {start, end} pairs (ISO-8601 strings)."
+      },
+      "returns": { "total_minutes": "float" }
+    },
+    {
+      "name": "sum_frequency",
+      "def": "sum_frequency(frequency_list: list[int]) -> int",
+      "doc": "Sums integer counts (e.g., for 'How many times...' queries).",
+      "args_detail": {
+        "frequency_list": "List of non-negative integers."
+      },
+      "returns": { "count": "int" }
+    },
+    {
+      "name": "summarize",
+      "def": "summarize(contexts: list[dict], target_context: list[str] | None = None) -> str",
+      "doc": "Generates a natural-language summary of the provided contexts. If target_context is None, includes all fields.",
+      "args_detail": {
+        "contexts": "List of context objects.",
+        "target_context": "Subset of ['place','action','activity','person','event','weather'], or None."
+      },
+      "returns": { "summary": "str" }
+    }
+  ]
+}
