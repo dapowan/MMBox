@@ -209,7 +209,7 @@ def compare_report_sets(gt_reports: List[Dict[str, Any]], est_reports: List[Dict
 
 if __name__ == "__main__":
     input_file1 = f"dataset/qa_v3/results_generate_workflow.jsonl"
-    input_file2 = f"dataset/qa_v4/results_generate_workflow.jsonl"
+    input_file2 = f"dataset/qa_llama_v1/results_generate_workflow.jsonl"
 
     results1 = read_jsonl(input_file1)
     results2 = read_jsonl(input_file2)

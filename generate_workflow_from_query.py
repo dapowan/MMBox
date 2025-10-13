@@ -118,9 +118,9 @@ def build_query_response_workflow(model, agent_prompt_meta, tools_meta, queries,
 
 if __name__ == '__main__':
     key = 'sk-BR9dBZyz2iF4VDfoA73aD6691f834cB5B4C6Ba33562cB9E8'
-    name = 'qwen3-8b' #  gpt-4o-2024-08-06
+    name = 'gpt-oss-120b' #  gpt-4o-2024-08-06 qwen3-8b
     model = LLMProxy(name, key)
-    version = 'v4'
+    version = 'gpt-oss_v1'
     output_dir = f"dataset/qa_{version}"
     log_dir = f"log/gen_response_workflow_{version}"
     config = {"gen_tag_num":1, "gen_tag_example_num": 5, "gen_tag_example_output": 10}

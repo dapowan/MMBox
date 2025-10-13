@@ -37,7 +37,7 @@ def convert_and_split_messages(
         {
             "messages": [
                 {"role": "user", "content": obj.get("prompt", "")},
-                {"role": "assistant", "content": obj.get("response_workflow", "")}
+                {"role": "assistant", "content": "```Python\n" + obj.get("response_workflow", "") + "\n```"}
             ]
         }
         for obj in data
