@@ -1,6 +1,5 @@
 import json
 import os
-from idlelib.iomenu import errors
 from typing import List, Dict, Any
 
 from program_analyzer import PythonProgramAnalyzer

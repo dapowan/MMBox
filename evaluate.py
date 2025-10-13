@@ -7,7 +7,7 @@ from swift.llm import InferEngine, InferRequest, PtEngine, RequestConfig, get_te
 from generate_workflow_from_query import extract_tool_names
 from program_analyzer import PythonProgramAnalyzer
 from statistic import compare_report_sets
-from utils import write_jsonl
+from utils import write_jsonl, read_yaml_file, load_json
 
 os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 max_new_tokens = 1024
@@ -78,7 +78,7 @@ def evaluate_metric_func(response, gt):
 def evaluate(model, checkpoint, agent_prompt_meta, tools_meta, test_dataset=None, output_path=None, query_list=None, infer_backend='pt', stream=False):
     # Get model and template, and load LoRA weights.
     engine = PtEngine(model, adapters=[checkpoint])
-    template = get_template(engine.model_meta.template, engine.processor, default_system=system)
+    template = get_template(engine.model_meta.template, engine.processor) # , default_system=system
     # You can modify the `default_template` directly here, or pass it in during `engine.infer`.
     engine.default_template = template
 
@@ -154,10 +154,12 @@ if __name__ == '__main__':
     #     '你是谁训练的？',
     # ]
     system = '''You are a helpful assistant that can analyze user's query and call correct tools to handle it.'''
-    model_id = 'Qwen/Qwen3-0.6B'
-    output_dir = 'output/t0/'
-    dataset_test = ['./dataset/v0_test.jsonl']
-    evaluate(model_id, 'output/t0/checkpoint-1', system, test_dataset=dataset_test)
+    model_id = 'Qwen/Qwen3-8B-Base'
+    output_dir = 'output/t1/'
+    dataset_test = ['./dataset/v1_test.jsonl']
+    agent_prompt_meta = read_yaml_file("prompt/agent_workflow_template_v3.yaml")
+    tools_meta = load_json("dataset/tools/tools_v1.json")
+    evaluate(model_id, 'output/t1/checkpoint-240', agent_prompt_meta, tools_meta, test_dataset=dataset_test)
     # summary = {}
     # test_dataset, _ = load_dataset(['./dataset/v0_test.jsonl'], split_dataset_ratio=0.0, num_proc=1, seed=42)
     # engine = PtEngine(model)
