@@ -48,7 +48,7 @@ def generate_query(model, query_prompt_meta, query_meta, types_to_gen, config, o
         matched = next((q for q in query_meta["questions"] if q["type"] == q_type), None)
         if matched:
             # Combine templates and backup templates
-            templates = matched.get("templates", []) + matched.get("templates_backup", [])
+            templates = matched.get("templates", []) # + matched.get("templates_backup", [])
             for t, template in enumerate(templates):
                 print(f"[{t}/{len(templates)}] Processing template: {template}")
                 for n in range(num_per_template):
@@ -85,10 +85,10 @@ if __name__ == '__main__':
     key = 'sk-BR9dBZyz2iF4VDfoA73aD6691f834cB5B4C6Ba33562cB9E8'
     name = 'gpt-4o-2024-08-06'
     model = LLMProxy(name, key)
-    output_dir = "dataset/qa_v0"
-    log_dir = "log/gen_query_v0"
-    config = {"num_per_template": 20}
-    query_meta = load_json("dataset/query_meta.json")
+    output_dir = "dataset/qa_gpt_v1"
+    log_dir = "log/gen_query_v1"
+    config = {"num_per_template": 50}
+    query_meta = load_json("dataset/query_meta_v2.json")
     query_prompt_meta = read_yaml_file("prompt/gen_query_rewrite.yaml")
     results = generate_query(model, query_prompt_meta, query_meta, QUERY_TYPES, config,
                              log_dir=log_dir, output_path=output_dir)

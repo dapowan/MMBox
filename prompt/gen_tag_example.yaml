@@ -14,9 +14,9 @@ placeholders:
 
 prompt_template: |
   You are helping me create examples for a query generation system about user's daily lives.
-  I have a tag called {tag}, which is defined as: "{description}". Here are some examples: {examples}.
+  I have a tag called {{tag}}, which is defined as: "{{description}}". Here are some examples: {{examples}}.
 
-  Please generate {n_output} diverse example values for {tag}.
+  Please generate {{n_output}} diverse example values for {{tag}}.
   - Keep examples short and natural (1–4 words).
   - Make them realistic and varied across daily life contexts.
   - Do not repeat the wording of the description itself.

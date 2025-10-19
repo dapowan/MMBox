@@ -126,12 +126,14 @@ def evaluate(model, checkpoint, agent_prompt_meta, tools_meta, test_dataset=None
                             "prompt": query,
                             "response_workflow": workflow_generated,
                             "report": analyzer_report,
+                            "response": response
                         })
                 except:
                     results_es.append({
                         "prompt": query,
                         "response_workflow": gt,
                         "report": {},
+                        "response": response
                     })
                 analyzer_report_gt = analyzer.analyze(gt)
                 results_gt.append({

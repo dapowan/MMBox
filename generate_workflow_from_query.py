@@ -91,43 +91,60 @@ def build_query_response_workflow(model, agent_prompt_meta, tools_meta, queries,
         generated_results = generate_and_extract(model, agent_prompt_meta["prompt_template"], prompt_values,
                                                  agent_prompt_meta["target_output"]["regex_extractors"]
                                                  ["prog_block"]["pattern"])
-        workflow_generated = generated_results["extracted"][0]
-        if workflow_generated:
-            print(f"Extracting workflow for query: \"{query}\"")
-            analyzer_report = analyzer.analyze(workflow_generated)
-            save_json_to_log(generated_results, os.path.join(log_dir, f"generated_outputs_workflow_{q_id}.log"))
+        try:
+            workflow_generated = generated_results["extracted"][0]
+            if workflow_generated:
+                print(f"Extracting workflow for query: \"{query}\"")
+                analyzer_report = analyzer.analyze(workflow_generated)
+                save_json_to_log(generated_results, os.path.join(log_dir, f"generated_outputs_workflow_{q_id}.log"))
+                results.append({
+                    "query_id": q_id,
+                    "query_type": q_type,
+                    "query": query,
+                    "response_workflow": workflow_generated,
+                    "report":  analyzer_report,
+                    "prompt": generated_results["rendered_prompt"]
+                })
+                # tag_examples = find_objects(tags_seed, "tag", tag_target)[0]
+                # tags_examples_new = diff_list(tags_examples_generated, tag_examples["examples"])
+                print(f"New workflow for query: \"{query}\", errors:{analyzer_report['errors']}")
+                # tag_examples["examples"] = tag_examples["examples"] + tags_examples_new
+            else:
+                print("No workflow examples were generated.")
+                results.append({
+                    "query_id": q_id,
+                    "query_type": q_type,
+                    "query": query,
+                    "response_workflow": "",
+                    "report": {},
+                    "prompt": generated_results["rendered_prompt"]
+                })
+        except Exception as e:
+            print("No workflow examples were generated.")
             results.append({
                 "query_id": q_id,
                 "query_type": q_type,
                 "query": query,
-                "response_workflow": workflow_generated,
-                "report":  analyzer_report,
+                "response_workflow": "",
+                "report": {},
                 "prompt": generated_results["rendered_prompt"]
             })
-            # tag_examples = find_objects(tags_seed, "tag", tag_target)[0]
-            # tags_examples_new = diff_list(tags_examples_generated, tag_examples["examples"])
-            print(f"New workflow for query: \"{query}\", errors:{analyzer_report['errors']}")
-            # tag_examples["examples"] = tag_examples["examples"] + tags_examples_new
-        else:
-            print("No workflow examples were generated.")
         print("-----------------------------------")
-
-    write_jsonl(results, os.path.join(output_path, "results_generate_workflow.jsonl"))
+        write_jsonl(results, os.path.join(output_path, "results_generate_workflow.jsonl"))
     return results
 
 
 if __name__ == '__main__':
     key = 'sk-BR9dBZyz2iF4VDfoA73aD6691f834cB5B4C6Ba33562cB9E8'
-    name = 'gpt-oss-120b' #  gpt-4o-2024-08-06 qwen3-8b
+    name = 'gpt-4o-2024-08-06' #  gpt-oss-120b gpt-4o-2024-08-06 qwen3-8b
     model = LLMProxy(name, key)
-    version = 'gpt-oss_v1'
+    version = 'gpt_v1'
     output_dir = f"dataset/qa_{version}"
     log_dir = f"log/gen_response_workflow_{version}"
-    config = {"gen_tag_num":1, "gen_tag_example_num": 5, "gen_tag_example_output": 10}
-    queries = read_jsonl("dataset/qa_v0/query.jsonl")
+    queries = read_jsonl("dataset/qa_gpt_v1/query.jsonl")
     tools_meta = load_json("dataset/tools/tools_v1.json")
     agent_prompt_meta = read_yaml_file("prompt/agent_workflow_template_v3.yaml")
     results = build_query_response_workflow(model, agent_prompt_meta, tools_meta, queries, types_to_check=QUERY_TYPES,
-                                            log_dir=log_dir, output_path=output_dir, num_target=500)
+                                            log_dir=log_dir, output_path=output_dir) # , num_target=500
     report_summary = evaluate_from_reports(results)
     print(report_summary["error_summary"])

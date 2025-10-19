@@ -1,0 +1,445 @@
+{
+  "questions": [
+    {
+      "type": "Time",
+      "templates": [
+        "When did I last <action> at <place>?",
+        "What time did I leave <place> on <time>?",
+        "When was the earliest I arrived at <place> during <time>?",
+        "On which date did I start <activity>?",
+        "What time did I usually go to <place> during <time>?"
+      ],
+      "templates_backup": [
+        "On which <time> did I spend the most time at <place>?"
+      ]
+    },
+    {
+      "type": "Duration",
+      "templates": [
+        "How long was I at <place> on <time>?",
+        "What was my total <activity> time during <time>?",
+        "How many hours did I spend commuting by <transport> in <time>?",
+        "How many minutes did I <action> after leaving <place> on <time>?",
+        "How long did I sleep on <time>?"
+      ],
+      "templates_backup": [
+        "What is the average time I stayed at <place> over <time>?",
+        "How many <count> of <event> did I have during <time>?"
+      ]
+    },
+    {
+      "type": "Frequency",
+      "templates": [
+        "How often did I <action> during <time>?",
+        "On how many days did I visit <place> in <time>?",
+        "How frequently did I do <activity> in the <time>?"
+      ],
+      "templates_backup": [
+        "How many times did I meet <person> in <time>?",
+        "How many <count> of <event> did I have during <time>?",
+        "What was my most frequent <place> during <time>?",
+        "How many days did I skip <activity> in <time>?",
+        "How often did I order <category> food in <time>?"
+      ]
+    },
+    {
+      "type": "Existence",
+      "templates": [
+        "Did I have a <event> on <time>?",
+        "Was I at <place> on <time>?",
+        "Did I <action> after leaving <place> on <time>?"
+      ],
+      "templates_backup": [
+        "Did I meet <person> during <time>?",
+        "Was there any <activity> recorded on <time>?",
+        "Did I travel by <transport> on <time>?",
+        "Did I buy any <object> during <time>?"
+      ]
+    },
+    {
+      "type": "Action",
+      "templates": [
+        "What did I do on <time>?",
+        "What did I do after I left <place> on <time>?",
+        "Where did I go before <event> on <time>?",
+        "What did I do right after <activity> on <time>?",
+        "What was the next action after meeting <person> on <time>?",
+        "What was the first thing I did after <event> on <time>?"
+      ],
+      "templates_backup": [
+        "What happened between leaving <place> and arriving at <place> on <time>?",
+        "What was the last thing I did before going home on <time>?"
+      ]
+    },
+    {
+      "type": "Place",
+      "templates": [
+        "Which places did I visit during <time>?",
+        "List the sequence of places I visited on <time>.",
+        "Where was I at <time> of day on <time>?",
+        "At which <place> did I start my day on <time>?",
+        "From which <place> did I return home on <time>?",
+        "Which city/area was I in during <time>?"
+      ],
+      "templates_backup": [
+        "Where did I spend most of my time on <time>?",
+        "What was the last thing I did before going home on <time>?",
+        "What was my most visited <place> type during <time>?"
+      ]
+    },
+    {
+      "type": "Comparison",
+      "templates": [
+        "Did I spend more time at <place> or <place> during <time>?",
+        "Which day did I sleep longer, <time> or <time>?",
+        "Was my <activity> time higher on <time> compared to <time>?",
+        "Did I walk more steps on <time> than on <time>?",
+        "Which route took longer: <transport> on <time> or <transport> on <time>?",
+        "Did I go out more in <time> than in <time>?",
+        "Was I more active in the morning or evening during <time>?"
+      ]
+    },
+    {
+      "type": "Trend",
+      "templates": [
+        "Has my <activity> time increased over <time>?",
+        "Did I exercise more this week compared to last week?",
+        "How has my sleep duration changed over <time>?",
+        "Are my meeting counts rising or falling over <time>?",
+        "Is my average commute duration getting shorter over <time>?",
+        "How has my time at home varied throughout <time>?"
+      ],
+      "templates_backup": [
+        "Is there a trend in my visits to <place> across <time>?"
+      ]
+    },
+    {
+      "type": "Summary",
+      "templates": [
+        "Summarize my activities on <time>.",
+        "What were the highlights of my <time>?",
+        "Give me a daily summary for <time>.",
+        "What are the top three places I spent time in during <time>?",
+        "Provide a summary of my meetings and travels for <time>.",
+        "What was my typical day pattern during <time>?",
+        "Summarize my health-related activities (sleep, steps, workouts) for <time>."
+      ]
+    },
+    {
+      "type": "Person",
+      "templates": [
+        "When did I last meet <person>?",
+        "How many times did I call <person> in <time>?",
+        "Did I see <person> on <time>?",
+        "Who did I spend the most time with during <time>?",
+        "List all the people I met on <time>.",
+        "Was I with <person> when I went to <place>?",
+        "Which <person> did I meet most often during <time>?"
+      ]
+    }
+  ],
+  "tags": [
+    {
+      "tag": "<time>",
+      "description": "Represents a time period or specific date/time.",
+      "examples": [
+        "Monday",
+        "last week",
+        "yesterday",
+        "October 2025",
+        "this morning",
+        "at 8 PM",
+        "tomorrow",
+        "next summer",
+        "dinner time",
+        "in two hours",
+        "last night",
+        "Thanksgiving",
+        "end of the month",
+        "early afternoon",
+        "New Year's Eve",
+        "mid-September",
+        "Wednesday morning",
+        "lunch break",
+        "during the meeting",
+        "autumn equinox",
+        "five minutes ago",
+        "next holiday",
+        "in a fortnight",
+        "this afternoon",
+        "by sundown",
+        "early December"
+      ]
+    },
+    {
+      "tag": "<place>",
+      "description": "Represents a location, either general or specific.",
+      "examples": [
+        "home",
+        "school",
+        "gym",
+        "supermarket",
+        "office",
+        "library",
+        "cafe",
+        "doctor's clinic",
+        "beach",
+        "bakery",
+        "airport",
+        "museum",
+        "university",
+        "park",
+        "restaurant",
+        "coffee shop",
+        "train station",
+        "hospital",
+        "bookstore",
+        "university campus",
+        "shopping mall",
+        "public park"
+      ]
+    },
+    {
+      "tag": "<person>",
+      "description": "Represents a person or group of people.",
+      "examples": [
+        "Alice",
+        "my boss",
+        "John",
+        "family",
+        "friends",
+        "roommate",
+        "teacher",
+        "Sarah",
+        "grandfather",
+        "neighbors",
+        "colleagues",
+        "Ella",
+        "barista",
+        "my partner",
+        "tennis coach",
+        "siblings",
+        "best friend",
+        "baby sister",
+        "team members",
+        "Amanda",
+        "coffee shop staff",
+        "coach",
+        "dentist",
+        "bus driver"
+      ]
+    },
+    {
+      "tag": "<action>",
+      "description": "Represents a short-term or punctual action (instantaneous events).",
+      "examples": [
+        "left",
+        "woke up",
+        "went to bed",
+        "arrived at",
+        "entered",
+        "sat down",
+        "began work",
+        "ate lunch",
+        "opened email",
+        "called mom",
+        "made coffee",
+        "took nap",
+        "started meeting",
+        "closed door",
+        "paid bill",
+        "ate breakfast",
+        "checked email",
+        "answered call",
+        "opened door",
+        "gave presentation",
+        "parked car",
+        "sent message",
+        "signed document",
+        "bought coffee",
+        "took photo"
+      ]
+    },
+    {
+      "tag": "<activity>",
+      "description": "Represents a long-term or continuous activity (extended duration).",
+      "examples": [
+        "studying",
+        "working",
+        "shopping",
+        "commuting",
+        "reading",
+        "exercising",
+        "gardening",
+        "writing a novel",
+        "volunteering",
+        "learning guitar",
+        "playing chess",
+        "renovating the house",
+        "training for a marathon",
+        "painting a mural",
+        "coaching a team",
+        "hosting a podcast",
+        "learning a language",
+        "managing a blog",
+        "building furniture",
+        "studying astronomy",
+        "practicing yoga",
+        "running a farm",
+        "teaching a class",
+        "knitting blankets",
+        "developing software",
+        "collecting antiques"
+      ]
+    },
+    {
+      "tag": "<event>",
+      "description": "Represents a scheduled or special event.",
+      "examples": [
+        "meeting",
+        "exam",
+        "party",
+        "conference",
+        "doctor’s appointment",
+        "wedding reception",
+        "school play",
+        "job interview",
+        "annual festival",
+        "community picnic",
+        "dance rehearsal",
+        "tennis match",
+        "volunteer session",
+        "art exhibition",
+        "business summit",
+        "dentist appointment",
+        "yoga class",
+        "charity fundraiser",
+        "birthday party",
+        "coding workshop",
+        "concert performance",
+        "book club meeting",
+        "soccer game"
+      ]
+    },
+    {
+      "tag": "<weather>",
+      "description": "Represents weather or environmental condition.",
+      "examples": [
+        "rainy",
+        "sunny",
+        "snowy",
+        "cloudy",
+        "stormy",
+        "hot day",
+        "humid afternoon",
+        "heavy rain",
+        "chilly morning",
+        "foggy evening",
+        "gusty winds",
+        "drizzling",
+        "freezing night",
+        "overcast",
+        "mild breeze",
+        "hazy skies",
+        "drizzly afternoon",
+        "humid night",
+        "windy morning",
+        "clear skies",
+        "frosty dawn",
+        "muggy evening",
+        "sunny afternoon",
+        "thunderstorm",
+        "cool breeze",
+        "hailstorm"
+      ]
+    },
+    {
+      "tag": "<transport>",
+      "description": "Represents a mode of transportation.",
+      "examples": [
+        "bus",
+        "train",
+        "car",
+        "bike",
+        "walk",
+        "flight",
+        "bicycle",
+        "tram",
+        "motorcycle",
+        "scooter",
+        "skateboard",
+        "subway",
+        "ferry",
+        "electric car",
+        "helicopter",
+        "rideshare",
+        "train ride",
+        "electric scooter",
+        "carpool",
+        "trolley bus",
+        "rollerblades",
+        "ride-sharing",
+        "cruise ship"
+      ]
+    },
+    {
+      "tag": "<duration>",
+      "description": "Represents a duration or time length.",
+      "examples": [
+        "30 minutes",
+        "2 hours",
+        "half a day",
+        "all night",
+        "one week",
+        "a few seconds",
+        "quarter of an hour",
+        "several weeks",
+        "just a moment",
+        "two days",
+        "one and a half months",
+        "a lifetime",
+        "one season",
+        "a brief period",
+        "an evening",
+        "a couple of hours",
+        "the entire morning",
+        "ten minutes",
+        "three months",
+        "an instant",
+        "a whole night",
+        "a few decades",
+        "some milliseconds"
+      ]
+    },
+    {
+      "tag": "<count>",
+      "description": "Represents a number of occurrences.",
+      "examples": [
+        "3 meetings",
+        "5 classes",
+        "2 gym visits",
+        "10 steps",
+        "8 emails",
+        "15 phone calls",
+        "6 errands",
+        "4 projects",
+        "7 meals",
+        "9 workouts",
+        "20 photos",
+        "12 messages",
+        "3 appointments",
+        "11 tasks",
+        "5 messages",
+        "7 tasks",
+        "12 visitors",
+        "9 exercises",
+        "4 breaks",
+        "6 chapters",
+        "11 photos",
+        "2 interviews",
+        "13 notifications",
+        "20 likes"
+      ]
+    }
+  ]
+}
