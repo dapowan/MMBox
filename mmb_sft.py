@@ -126,9 +126,9 @@ if __name__ == "__main__":
     mp.freeze_support()   # Windows 安全导入建议
     system = '''You are a helpful assistant that can analyze user's query and call correct tools to handle it.'''
     model_id_or_path = 'Qwen/Qwen3-8B-Base'
-    output_dir = 'output/t1/'
-    dataset_train = ['./dataset/v1_train.jsonl']  #
-    dataset_test = ['./dataset/v1_test.jsonl']
+    output_dir = 'output/t2/'
+    dataset_train = ['./dataset/v2_train.jsonl']  #
+    dataset_test = ['./dataset/v2_test.jsonl']
     agent_prompt_meta = read_yaml_file("prompt/agent_workflow_template_v3.yaml")
     tools_meta = load_json("dataset/tools/tools_v1.json")
     main(model_id_or_path, dataset_train, output_dir, agent_prompt_meta, tools_meta, dataset_test=dataset_test)
