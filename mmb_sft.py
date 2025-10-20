@@ -48,7 +48,7 @@ def main(model_id_or_path, dataset, output_dir, agent_prompt_meta, tools_meta, d
     # # ====== training_args ======
     training_args = Seq2SeqTrainingArguments(
         output_dir=output_dir,
-        learning_rate=1e-4,
+        learning_rate=2e-5,
         per_device_train_batch_size=1,
         per_device_eval_batch_size=1,
         gradient_checkpointing=True,
@@ -62,7 +62,7 @@ def main(model_id_or_path, dataset, output_dir, agent_prompt_meta, tools_meta, d
         eval_strategy='steps',
         eval_steps=50,
         gradient_accumulation_steps=16,
-        num_train_epochs=10,
+        num_train_epochs=2,
         metric_for_best_model='loss',
         save_total_limit=2,
         logging_steps=5,
@@ -126,7 +126,7 @@ if __name__ == "__main__":
     mp.freeze_support()   # Windows 安全导入建议
     system = '''You are a helpful assistant that can analyze user's query and call correct tools to handle it.'''
     model_id_or_path = 'Qwen/Qwen3-8B-Base'
-    output_dir = 'output/t2/'
+    output_dir = 'output/t3/'
     dataset_train = ['./dataset/v2_train.jsonl']  #
     dataset_test = ['./dataset/v2_test.jsonl']
     agent_prompt_meta = read_yaml_file("prompt/agent_workflow_template_v3.yaml")
