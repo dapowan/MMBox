@@ -194,3 +194,26 @@ def write_jsonl(
     with open(path, mode, encoding="utf-8") as f:
         for item in data:
             f.write(json.dumps(item, ensure_ascii=False) + "\n")
+
+
+def extract_tool_names(tools_json: Dict[str, Any]) -> List[str]:
+    """
+    提取 JSON 中所有工具（internal + external）的名称。
+
+    Parameters
+    ----------
+    tools_json : dict
+        含有 "internal_tools" 和/或 "external_tools" 的 JSON 对象。
+
+    Returns
+    -------
+    List[str]
+        所有工具名称的列表。
+    """
+    names = []
+    for key in ["internal_tools", "external_tools"]:
+        if key in tools_json and isinstance(tools_json[key], list):
+            for tool in tools_json[key]:
+                if isinstance(tool, dict) and "name" in tool:
+                    names.append(tool["name"])
+    return names

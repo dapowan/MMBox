@@ -5,7 +5,7 @@ from typing import List, Dict, Any
 from program_analyzer import PythonProgramAnalyzer
 from statistic import evaluate_from_reports
 from utils import load_json, read_yaml_file, save_json_to_log, string_to_json, save_dict_to_json, write_jsonl, \
-    read_jsonl
+    read_jsonl, extract_tool_names
 from utils_llm import LLMProxy, generate_and_extract
 import random
 
@@ -43,28 +43,6 @@ def filter_queries(
             filtered.append(q)
     return filtered
 
-
-def extract_tool_names(tools_json: Dict[str, Any]) -> List[str]:
-    """
-    提取 JSON 中所有工具（internal + external）的名称。
-
-    Parameters
-    ----------
-    tools_json : dict
-        含有 "internal_tools" 和/或 "external_tools" 的 JSON 对象。
-
-    Returns
-    -------
-    List[str]
-        所有工具名称的列表。
-    """
-    names = []
-    for key in ["internal_tools", "external_tools"]:
-        if key in tools_json and isinstance(tools_json[key], list):
-            for tool in tools_json[key]:
-                if isinstance(tool, dict) and "name" in tool:
-                    names.append(tool["name"])
-    return names
 
 def build_query_response_workflow(model, agent_prompt_meta, tools_meta, queries, types_to_check, num_target=None,
                                   output_path=None, log_dir=None):

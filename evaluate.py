@@ -75,6 +75,19 @@ def extract_query_response_from_messages(messages):
 def evaluate_metric_func(response, gt):
     return {'a': 1.0, 'b': 2.0}
 
+def extract_workflow(response, response_target_pattern):
+    pattern = re.compile(response_target_pattern, flags=re.DOTALL)
+    matches = pattern.findall(response)
+    if not matches:
+        extracted = []
+    else:
+        if isinstance(matches[0], tuple):
+            extracted = [tuple(m) for m in matches]
+        else:
+            extracted = list(matches)
+    return extracted[0]
+
+
 def evaluate(model, checkpoint, agent_prompt_meta, tools_meta, test_dataset=None, output_path=None, query_list=None, infer_backend='pt', stream=False):
     # Get model and template, and load LoRA weights.
     engine = PtEngine(model, adapters=[checkpoint])
@@ -110,16 +123,7 @@ def evaluate(model, checkpoint, agent_prompt_meta, tools_meta, test_dataset=None
                 response = infer_func(engine, req)
 
                 try:
-                    pattern = re.compile(response_target_pattern, flags=re.DOTALL)
-                    matches = pattern.findall(response)
-                    if not matches:
-                        extracted = []
-                    else:
-                        if isinstance(matches[0], tuple):
-                            extracted = [tuple(m) for m in matches]
-                        else:
-                            extracted = list(matches)
-                    workflow_generated = extracted[0]
+                    workflow_generated = extract_workflow(response, response_target_pattern)
                     if workflow_generated:
                         analyzer_report = analyzer.analyze(workflow_generated)
                         results_es.append({
@@ -135,12 +139,15 @@ def evaluate(model, checkpoint, agent_prompt_meta, tools_meta, test_dataset=None
                         "report": {},
                         "response": response
                     })
-                analyzer_report_gt = analyzer.analyze(gt)
-                results_gt.append({
-                    "prompt": query,
-                    "response_workflow": gt,
-                    "report": analyzer_report_gt,
-                })
+                workflow_generated_gt = extract_workflow(gt, response_target_pattern)
+                if workflow_generated_gt:
+                    analyzer_report_gt = analyzer.analyze(workflow_generated_gt)
+                    results_gt.append({
+                        "prompt": query,
+                        "response_workflow": workflow_generated_gt,
+                        "report": analyzer_report_gt,
+                        "response": gt
+                    })
             n += 1
         write_jsonl(results_es, os.path.join(output_path, "test_report_es.jsonl"))
         write_jsonl(results_gt, os.path.join(output_path, "test_report_gt.jsonl"))
